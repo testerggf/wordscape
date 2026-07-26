@@ -5,7 +5,7 @@ class ModelConfig(BaseModel):
     base_url: HttpUrl = Field(..., description="OpenAI-compatible base URL")
     api_key: str = Field(..., min_length=1)
     model_name: str = Field(..., min_length=1)
-    max_tokens: int = Field(default=128, ge=16, le=8192)
+    max_tokens: int = Field(default=128, ge=16, le=65536)
     temperature: float = Field(default=0.2, ge=0, le=2)
 
 

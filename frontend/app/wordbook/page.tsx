@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { ArrowLeft, BookMarked, ChevronDown, ExternalLink, Trash2, Volume2 } from "lucide-react";
-import { useState } from "react";
-import { getDictEntry } from "@/lib/seed-data";
+import { useEffect, useState } from "react";
+import { ensureBuiltinDict, lookupDict } from "@/lib/builtin-dict";
 import { resolveWith } from "@/lib/lemma";
 import { loadWordbook, removeWordbookEntry, type WordbookEntry } from "@/lib/wordbook";
 import { WORDBOOK_EVENTS, useClientValue } from "@/lib/use-client-value";
@@ -14,6 +14,18 @@ const EMPTY_ENTRIES: WordbookEntry[] = [];
 export default function WordbookPage() {
   const entries = useClientValue(loadWordbook, EMPTY_ENTRIES, WORDBOOK_EVENTS);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [, setDictLoaded] = useState(false);
+
+  // 词典懒加载完成后重渲染，补全词条释义
+  useEffect(() => {
+    let active = true;
+    void ensureBuiltinDict().then(() => {
+      if (active) setDictLoaded(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const removeEntry = (word: string) => {
     removeWordbookEntry(word);
@@ -76,7 +88,7 @@ function WordbookCard({
   onToggle: () => void;
   onRemove: () => void;
 }) {
-  const resolved = resolveWith(entry.word, (candidate) => getDictEntry(candidate));
+  const resolved = resolveWith(entry.word, (candidate) => lookupDict(candidate));
   const dict = resolved?.value;
 
   const speak = () => {

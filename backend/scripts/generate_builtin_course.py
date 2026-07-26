@@ -55,6 +55,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.8)
     parser.add_argument("--max-articles", type=int, default=None)
     parser.add_argument("--retries", type=int, default=2, help="单篇失败/质检不过的重试次数")
+    parser.add_argument("--concurrency", type=int, default=4, help="文章/词典批次的并发数")
     parser.add_argument("--output", required=True, help="输出 JSON 文件路径")
     parser.add_argument("--skip-dict", action="store_true", help="跳过词典数据生成")
     parser.add_argument("--to-supabase", action="store_true", help="课程写入 Supabase（需 backend/.env 配置）")
@@ -81,31 +82,43 @@ async def generate_articles(
     writer: ArticleWriter,
     request: GenerateCourseRequest,
     retries: int,
+    concurrency: int,
 ) -> GenerateCourseResponse:
     processed_words, plans = pipeline.prepare(request)
-    print(f"[plan] {len(processed_words)} 个有效词 → {len(plans)} 篇")
+    print(f"[plan] {len(processed_words)} 个有效词 → {len(plans)} 篇", flush=True)
 
-    articles: list[GeneratedArticle] = []
-    for plan in plans:
-        article: GeneratedArticle | None = None
-        for attempt in range(retries + 1):
-            try:
-                candidate = await pipeline.write_article(writer, plan)
-            except Exception as exc:  # noqa: BLE001
-                print(f"[article {plan.index}] 第 {attempt + 1} 次生成异常：{str(exc)[:120]}")
-                continue
+    semaphore = asyncio.Semaphore(max(1, concurrency))
+    done_count = 0
 
-            article = candidate
-            if candidate.quality.get("passed"):
-                break
-            print(f"[article {plan.index}] 第 {attempt + 1} 次质检不过：{candidate.quality.get('issues')}")
+    async def write_with_retry(plan) -> GeneratedArticle:
+        nonlocal done_count
+        async with semaphore:
+            article: GeneratedArticle | None = None
+            for attempt in range(retries + 1):
+                try:
+                    candidate = await pipeline.write_article(writer, plan)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[article {plan.index}] 第 {attempt + 1} 次生成异常：{str(exc)[:120]}", flush=True)
+                    continue
 
-        if article is None:
-            raise RuntimeError(f"第 {plan.index} 篇连续 {retries + 1} 次生成失败，中止。可稍后重跑脚本。")
+                article = candidate
+                if candidate.quality.get("passed"):
+                    break
+                print(f"[article {plan.index}] 第 {attempt + 1} 次质检不过：{candidate.quality.get('issues')}", flush=True)
 
-        status = "✓" if article.quality.get("passed") else "⚠ 质检未过（保留最后一次结果）"
-        print(f"[article {plan.index}/{len(plans)}] {article.title} — {article.word_count} 词，覆盖率 {article.quality.get('coverage'):.0%} {status}")
-        articles.append(article)
+            if article is None:
+                raise RuntimeError(f"第 {plan.index} 篇连续 {retries + 1} 次生成失败，中止。可稍后重跑脚本。")
+
+            done_count += 1
+            status = "✓" if article.quality.get("passed") else "⚠ 质检未过（保留最后一次结果）"
+            print(
+                f"[article {done_count}/{len(plans)}] #{plan.index} {article.title} — {article.word_count} 词，覆盖率 {article.quality.get('coverage'):.0%} {status}",
+                flush=True,
+            )
+            return article
+
+    articles = list(await asyncio.gather(*(write_with_retry(plan) for plan in plans)))
+    articles.sort(key=lambda item: item.index)
 
     return GenerateCourseResponse(
         course_title=request.vocab_set_name,
@@ -129,32 +142,39 @@ def mock_dict_entry(word: str) -> dict:
     }
 
 
-async def generate_dictionary(client: AIClient, words: list[str], retries: int) -> list[dict]:
+async def generate_dictionary(client: AIClient, words: list[str], retries: int, concurrency: int) -> list[dict]:
     system_prompt = DICT_PROMPT_PATH.read_text(encoding="utf-8")
     entries: dict[str, dict] = {}
     pending = [word.lower() for word in words]
+    semaphore = asyncio.Semaphore(max(1, concurrency))
+
+    async def run_batch(batch: list[str], batch_index: int, total: int) -> tuple[list[str], dict[str, dict]]:
+        if client.mock_mode:
+            return batch, {word: mock_dict_entry(word) for word in batch}
+
+        async with semaphore:
+            try:
+                payload = await client.chat_json(system=system_prompt, user="\n".join(batch))
+                got = {str(item.get("word", "")).lower(): item for item in payload.get("entries", []) if item.get("word")}
+                print(f"[dict] 批次 {batch_index}/{total} 完成（{len(got)}/{len(batch)} 词）", flush=True)
+                return batch, got
+            except Exception as exc:  # noqa: BLE001
+                print(f"[dict] 批次 {batch_index}/{total} 失败：{str(exc)[:120]}", flush=True)
+                return batch, {}
 
     for round_index in range(retries + 1):
         if not pending:
             break
 
         batches = [pending[i : i + DICT_BATCH_SIZE] for i in range(0, len(pending), DICT_BATCH_SIZE)]
-        print(f"[dict] 第 {round_index + 1} 轮：待生成 {len(pending)} 词，共 {len(batches)} 批")
+        print(f"[dict] 第 {round_index + 1} 轮：待生成 {len(pending)} 词，共 {len(batches)} 批", flush=True)
+
+        results = await asyncio.gather(
+            *(run_batch(batch, index, len(batches)) for index, batch in enumerate(batches, start=1))
+        )
+
         next_pending: list[str] = []
-
-        for batch_index, batch in enumerate(batches, start=1):
-            if client.mock_mode:
-                for word in batch:
-                    entries[word] = mock_dict_entry(word)
-                continue
-
-            try:
-                payload = await client.chat_json(system=system_prompt, user="\n".join(batch))
-                got = {str(item.get("word", "")).lower(): item for item in payload.get("entries", []) if item.get("word")}
-            except Exception as exc:  # noqa: BLE001
-                print(f"[dict] 批次 {batch_index} 失败：{str(exc)[:120]}")
-                got = {}
-
+        for batch, got in results:
             for word in batch:
                 if word in got:
                     entries[word] = got[word]
@@ -164,7 +184,7 @@ async def generate_dictionary(client: AIClient, words: list[str], retries: int) 
         pending = next_pending
 
     if pending:
-        print(f"[dict] ⚠ 仍缺 {len(pending)} 词的词典数据：{pending[:10]} ...")
+        print(f"[dict] ⚠ 仍缺 {len(pending)} 词的词典数据：{pending[:10]} ...", flush=True)
 
     return list(entries.values())
 
@@ -199,12 +219,12 @@ async def main() -> None:
     client = AIClient(config)
     writer = ArticleWriter(client)
 
-    course = await generate_articles(pipeline, writer, request, retries=args.retries)
+    course = await generate_articles(pipeline, writer, request, retries=args.retries, concurrency=args.concurrency)
 
     dict_entries: list[dict] = []
     if not args.skip_dict:
         # 词典覆盖全部目标词（含复现词），用课程计划里的词（即清洗后的词表）
-        dict_entries = await generate_dictionary(client, words, retries=args.retries)
+        dict_entries = await generate_dictionary(client, words, retries=args.retries, concurrency=args.concurrency)
 
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)

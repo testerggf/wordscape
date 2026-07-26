@@ -8,8 +8,11 @@ import { NO_EVENTS, useClientValue } from "@/lib/use-client-value";
 import { cn } from "@/lib/utils";
 import type { Article, ReadingStatus } from "@/lib/seed-data";
 
+/** 列表页只需要元信息，不携带全文段落 */
+export type ArticleSummary = Omit<Article, "paragraphs">;
+
 interface ArticleCardProps {
-  article: Article;
+  article: ArticleSummary;
 }
 
 export function ArticleCard({ article: seedArticle }: ArticleCardProps) {

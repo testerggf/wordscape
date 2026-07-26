@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { CourseArticleFilters } from "@/components/course/CourseArticleFilters";
-import { getCourse } from "@/lib/seed-data";
+import { getBuiltinCourse } from "@/lib/builtin-course";
 
 interface CoursePageProps {
   params: Promise<{ courseId: string }>;
@@ -10,14 +10,20 @@ interface CoursePageProps {
 
 export default async function CoursePage({ params }: CoursePageProps) {
   const { courseId } = await params;
-  const course = getCourse(courseId);
+  const course = getBuiltinCourse();
 
-  if (!course) {
+  if (courseId !== course.id) {
     notFound();
   }
 
   const progress = Math.round((course.completedArticles / course.totalArticles) * 100);
   const topics = Array.from(new Set(course.articles.map((article) => article.topic)));
+  // 列表页只传元信息，不携带全文段落（真实课程全文有数 MB）
+  const articleSummaries = course.articles.map((article) => {
+    const { paragraphs, ...summary } = article;
+    void paragraphs;
+    return summary;
+  });
 
   return (
     <main className="min-h-screen bg-[var(--neutral-50)] px-5 py-5">
@@ -49,7 +55,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
           </div>
         </section>
 
-        <CourseArticleFilters topics={topics} articles={course.articles} />
+        <CourseArticleFilters topics={topics} articles={articleSummaries} />
       </div>
     </main>
   );

@@ -4,7 +4,8 @@ import { ArrowLeft, BookMarked, BookOpen, CheckCircle, Gauge, History, Languages
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { QuizDialog } from "@/components/reader/QuizDialog";
-import { getDictEntry, type Article, type Sentence } from "@/lib/seed-data";
+import type { Article, Sentence } from "@/lib/seed-data";
+import { ensureBuiltinDict, lookupDict } from "@/lib/builtin-dict";
 import { lemmaCandidates, resolveInSet, resolveWith } from "@/lib/lemma";
 import { loadLookupSet, recordLookup } from "@/lib/lookup-history";
 import { loadProgress, saveProgress, type ArticleProgress } from "@/lib/reading-progress";
@@ -97,8 +98,9 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
     };
   }, [article.id]);
 
-  // 卸载时停掉朗读
+  // 预加载内置词典；卸载时停掉朗读
   useEffect(() => {
+    void ensureBuiltinDict();
     return () => {
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     };
@@ -535,11 +537,23 @@ const EMPTY_WORDBOOK: never[] = [];
 function DictCard({ context, article, onClose }: { context: DictContext | null; article: Article; onClose: () => void }) {
   const wordbook = useClientValue(loadWordbook, EMPTY_WORDBOOK, WORDBOOK_EVENTS);
   const rateSettings = useClientValue(loadReaderSettings, DEFAULT_READER_SETTINGS, READER_SETTINGS_EVENTS);
+  const [, setDictLoaded] = useState(false);
+
+  // 词典异步加载完成后触发一次重渲染，保证打开过早的卡片也能拿到词条
+  useEffect(() => {
+    let active = true;
+    void ensureBuiltinDict().then(() => {
+      if (active) setDictLoaded(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (!context) return null;
 
   const { rawWord, sentence } = context;
-  const resolved = resolveWith(rawWord, (candidate) => getDictEntry(candidate));
+  const resolved = resolveWith(rawWord, (candidate) => lookupDict(candidate));
   const entry = resolved?.value;
   // 生词本归一键：词典词条优先，其次是原形候选（小写原词）
   const wordKey = entry?.word ?? lemmaCandidates(rawWord)[0] ?? rawWord.toLowerCase();

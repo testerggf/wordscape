@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArticleCard } from "@/components/course/ArticleCard";
-import type { Article } from "@/lib/seed-data";
+import { ArticleCard, type ArticleSummary } from "@/components/course/ArticleCard";
 import { cn } from "@/lib/utils";
 
 interface CourseArticleFiltersProps {
   topics: string[];
-  articles: Article[];
+  articles: ArticleSummary[];
 }
 
 const ALL_TOPICS = "全部";

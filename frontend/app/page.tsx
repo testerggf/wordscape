@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, FilePlus2, Settings, Sparkles } from "lucide-react";
 import { QuickLinks } from "@/components/home/QuickLinks";
-import { courses } from "@/lib/seed-data";
+import { getBuiltinCourse } from "@/lib/builtin-course";
 
 export default function Home() {
-  const course = courses[0];
+  const course = getBuiltinCourse();
 
   return (
     <main className="min-h-screen bg-[var(--neutral-50)]">
