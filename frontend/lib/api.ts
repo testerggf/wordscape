@@ -1,5 +1,20 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
+async function parseOrThrow<TResponse>(response: Response): Promise<TResponse> {
+  if (!response.ok) {
+    const text = await response.text();
+    let detail = text;
+    try {
+      detail = (JSON.parse(text) as { detail?: string }).detail ?? text;
+    } catch {
+      // 非 JSON 错误体，用原文
+    }
+    throw new Error(detail || `请求失败：${response.status}`);
+  }
+
+  return response.json() as Promise<TResponse>;
+}
+
 export async function apiPost<TResponse, TBody = unknown>(path: string, body: TBody): Promise<TResponse> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
@@ -7,12 +22,12 @@ export async function apiPost<TResponse, TBody = unknown>(path: string, body: TB
     body: JSON.stringify(body),
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `请求失败：${response.status}`);
-  }
+  return parseOrThrow<TResponse>(response);
+}
 
-  return response.json() as Promise<TResponse>;
+export async function apiGet<TResponse>(path: string): Promise<TResponse> {
+  const response = await fetch(`${API_BASE_URL}${path}`);
+  return parseOrThrow<TResponse>(response);
 }
 
 export interface ModelConfig {
@@ -88,4 +103,42 @@ export interface GeneratedCourseResponse {
 export interface PersistGeneratedCourseResponse {
   vocab_set_id: string;
   course_id: string;
+}
+
+export type GeneratedArticle = GeneratedCourseResponse["articles"][number];
+
+export interface ArticlePlanStatus {
+  index: number;
+  topic: string;
+  target_word_count: number;
+  status: "pending" | "generating" | "done" | "failed";
+  title: string | null;
+  error: string | null;
+}
+
+export interface PreviewArticleResponse {
+  preview_id: string;
+  course_title: string;
+  total_words: number;
+  total_articles: number;
+  plans: ArticlePlanStatus[];
+  first_article: GeneratedArticle;
+}
+
+export interface StartCourseResponse {
+  task_id: string;
+  total_articles: number;
+}
+
+export interface TaskStatusResponse {
+  task_id: string;
+  status: "pending" | "running" | "done" | "failed";
+  course_title: string;
+  total_articles: number;
+  completed_articles: number;
+  failed_articles: number;
+  current_index: number | null;
+  articles: ArticlePlanStatus[];
+  error: string | null;
+  result: GeneratedCourseResponse | null;
 }

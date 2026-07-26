@@ -54,3 +54,53 @@ class GenerateCourseResponse(BaseModel):
     total_words: int
     total_articles: int
     articles: list[GeneratedArticle]
+
+
+class ArticlePlanStatus(BaseModel):
+    index: int
+    topic: str
+    target_word_count: int
+    status: str = Field(description="pending | generating | done | failed")
+    title: str | None = None
+    error: str | None = None
+
+
+class PreviewArticleResponse(BaseModel):
+    preview_id: str
+    course_title: str
+    total_words: int
+    total_articles: int
+    plans: list[ArticlePlanStatus]
+    first_article: GeneratedArticle
+
+
+class StartCourseRequest(BaseModel):
+    """启动异步全量生成：传 preview_id 续接试读结果，或直接给完整生成参数。"""
+
+    preview_id: str | None = None
+    vocab_set_name: str = Field(default="自定义词库")
+    words: list[str] | None = None
+    ai_config: ModelConfig | None = Field(default=None, alias="model_config")
+    difficulty: str = Field(default="intermediate")
+    style: str = Field(default="mixed")
+    max_articles: int | None = Field(default=None, ge=1, le=20)
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class StartCourseResponse(BaseModel):
+    task_id: str
+    total_articles: int
+
+
+class TaskStatusResponse(BaseModel):
+    task_id: str
+    status: str = Field(description="pending | running | done | failed")
+    course_title: str
+    total_articles: int
+    completed_articles: int
+    failed_articles: int
+    current_index: int | None = None
+    articles: list[ArticlePlanStatus]
+    error: str | None = None
+    result: GenerateCourseResponse | None = None

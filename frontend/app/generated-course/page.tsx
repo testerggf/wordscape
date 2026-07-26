@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookOpen, FilePlus2, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, FilePlus2, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { deleteGeneratedCourse, loadGeneratedCourses, type StoredGeneratedCourse } from "@/lib/generated-course";
-import { GENERATED_COURSE_EVENTS, useClientValue } from "@/lib/use-client-value";
+import { loadActiveGeneration } from "@/lib/generation-task";
+import { GENERATED_COURSE_EVENTS, NO_EVENTS, useClientValue } from "@/lib/use-client-value";
 
 const EMPTY_COURSES: StoredGeneratedCourse[] = [];
 
 export default function GeneratedCourseListPage() {
   const courses = useClientValue(loadGeneratedCourses, EMPTY_COURSES, GENERATED_COURSE_EVENTS);
+  const activeGeneration = useClientValue(loadActiveGeneration, null, NO_EVENTS);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const removeCourse = (id: string) => {
@@ -36,6 +38,19 @@ export default function GeneratedCourseListPage() {
           <h1 className="mt-1 text-3xl font-bold">我的生成课程</h1>
           <p className="mt-2 text-sm text-white/75">共 {courses.length} 套课程，全部由你的词库 AI 生成。</p>
         </section>
+
+        {activeGeneration && (
+          <Link
+            href={`/generate-progress/${activeGeneration.taskId}`}
+            className="mt-5 flex items-center gap-3 rounded-lg border border-[var(--accent-200)] bg-[#FFF8EF] p-4 transition hover:border-[var(--accent-400)]"
+          >
+            <Loader2 className="animate-spin text-[var(--accent-600)]" size={18} />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-[var(--neutral-900)]">「{activeGeneration.name}」正在生成中</div>
+              <div className="text-xs text-[var(--neutral-400)]">点击查看实时进度</div>
+            </div>
+          </Link>
+        )}
 
         {courses.length === 0 ? (
           <section className="mt-5 rounded-lg bg-white p-8 text-center shadow-sm">
