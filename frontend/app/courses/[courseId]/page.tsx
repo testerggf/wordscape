@@ -10,9 +10,9 @@ interface CoursePageProps {
 
 export default async function CoursePage({ params }: CoursePageProps) {
   const { courseId } = await params;
-  const course = getBuiltinCourse();
+  const course = getBuiltinCourse(courseId);
 
-  if (courseId !== course.id) {
+  if (!course) {
     notFound();
   }
 

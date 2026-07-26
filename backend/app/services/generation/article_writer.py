@@ -15,12 +15,17 @@ class ArticleWriter:
     async def write(self, plan: ArticlePlan) -> dict:
         word_list = "\n".join(plan.target_words)
         review_words = ", ".join(plan.review_words) if plan.review_words else "None"
+        # 完整指令放进 user 消息：部分中转/模型对长 system prompt 的遵循很弱
         user_prompt = (
+            f"{self.prompt}\n\n---\n"
             f"Theme: {plan.topic}（{plan.topic_en}）\n"
             f"Target words to include ({len(plan.target_words)} words):\n{word_list}\n\n"
             f"Review words to naturally reuse if possible:\n{review_words}"
         )
-        article = await self.ai_client.chat_json(system=self.prompt, user=user_prompt)
+        article = await self.ai_client.chat_json(
+            system="You are a JSON API. Output raw JSON only — no markdown fences, no commentary.",
+            user=user_prompt,
+        )
         article.setdefault("topic", plan.topic)
         article.setdefault("topic_en", plan.topic_en)
         return article

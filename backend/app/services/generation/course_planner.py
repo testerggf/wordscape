@@ -7,6 +7,8 @@ from app.services.generation.vocab_processor import ProcessedWord
 
 TARGET_WORDS_PER_ARTICLE = 100
 REVIEW_WORDS_PER_ARTICLE = 20
+# 少于此数的话题组并入"综合词汇"，尾块少于此数并入前一块，避免生成一句话的"文章"
+MIN_CHUNK_WORDS = 30
 
 TOPIC_EN = {
     "校园生活": "Campus Life",
@@ -44,13 +46,29 @@ class CoursePlanner:
             )]
 
         sorted_words = sorted(words, key=lambda item: (item.topic, -item.frequency_rank, item.word))
+
+        # 小话题组并入"综合词汇"，具体话题在前、综合在后
+        general: list[str] = []
+        topic_groups: list[tuple[str, list[str]]] = []
         for topic, group in groupby(sorted_words, key=lambda item: item.topic):
             topic_words = [item.word for item in group]
-            for start in range(0, len(topic_words), TARGET_WORDS_PER_ARTICLE):
-                chunk = topic_words[start:start + TARGET_WORDS_PER_ARTICLE]
-                if not chunk:
-                    continue
+            if topic == "综合词汇" or len(topic_words) < MIN_CHUNK_WORDS:
+                general.extend(topic_words)
+            else:
+                topic_groups.append((topic, topic_words))
+        if general:
+            topic_groups.append(("综合词汇", general))
 
+        for topic, topic_words in topic_groups:
+            chunks = [
+                topic_words[start:start + TARGET_WORDS_PER_ARTICLE]
+                for start in range(0, len(topic_words), TARGET_WORDS_PER_ARTICLE)
+            ]
+            # 尾块过小则并入前一块
+            if len(chunks) >= 2 and len(chunks[-1]) < MIN_CHUNK_WORDS:
+                chunks[-2].extend(chunks.pop())
+
+            for chunk in chunks:
                 plans.append(ArticlePlan(
                     index=index,
                     topic=topic,

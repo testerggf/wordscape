@@ -5,11 +5,11 @@ import { getDictEntry, type DictEntry } from "@/lib/seed-data";
 let cache: Record<string, DictEntry> | null = null;
 let loading: Promise<void> | null = null;
 
-/** 懒加载内置课程词典（public/dict/cet4.json，构建时由生成脚本产出）。 */
+/** 懒加载内置课程词典（public/dict/builtin.json，由 export_frontend_data.py 产出）。 */
 export function ensureBuiltinDict(): Promise<void> {
   if (cache) return Promise.resolve();
 
-  loading ??= fetch("/dict/cet4.json")
+  loading ??= fetch("/dict/builtin.json")
     .then((response) => (response.ok ? response.json() : {}))
     .then((data: Record<string, DictEntry>) => {
       cache = data && typeof data === "object" ? data : {};

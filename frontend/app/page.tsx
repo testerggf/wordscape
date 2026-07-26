@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, FilePlus2, Settings, Sparkles } from "lucide-react";
 import { QuickLinks } from "@/components/home/QuickLinks";
-import { getBuiltinCourse } from "@/lib/builtin-course";
+import { getBuiltinCourses } from "@/lib/builtin-course";
 
 export default function Home() {
-  const course = getBuiltinCourse();
+  const courses = getBuiltinCourses();
+  const firstCourse = courses[0];
 
   return (
     <main className="min-h-screen bg-[var(--neutral-50)]">
@@ -13,18 +14,18 @@ export default function Home() {
           <div>
             <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm">
               <Sparkles size={15} />
-              WordScape MVP
+              WordScape
             </div>
             <h1 className="max-w-2xl font-serif text-4xl font-bold leading-tight md:text-5xl">
               输入词汇表，AI 生成故事，读完就记住。
             </h1>
             <p className="mt-4 max-w-xl text-base leading-8 text-white/75">
-              当前先实现本地 CET-4 阅读 MVP，用真实交互验证阅读器、高亮词和词典卡片体验。
+              从小学到职场的内置词库开箱即用，也可以导入任意词汇表，生成专属精读课程。
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
-              href={`/courses/${course.id}`}
+              href={`/courses/${firstCourse.id}`}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-[var(--primary-900)]"
             >
               开始学习
@@ -46,28 +47,24 @@ export default function Home() {
           <BookOpen size={17} />
           内置词库
         </div>
-        <Link
-          href={`/courses/${course.id}`}
-          className="block rounded-lg border border-[var(--neutral-200)] bg-white p-5 transition hover:border-[var(--primary-700)]"
-        >
-          <div className="text-sm font-semibold text-[var(--primary-700)]">官方示例</div>
-          <h2 className="mt-2 text-2xl font-bold text-[var(--neutral-900)]">{course.title}</h2>
-          <p className="mt-2 text-sm text-[var(--neutral-700)]">{course.subtitle}</p>
-          <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-lg bg-[var(--neutral-100)] p-3">
-              <div className="text-xl font-bold">{course.totalArticles}</div>
-              <div className="text-xs text-[var(--neutral-400)]">计划篇数</div>
-            </div>
-            <div className="rounded-lg bg-[var(--neutral-100)] p-3">
-              <div className="text-xl font-bold">{course.completedArticles}</div>
-              <div className="text-xs text-[var(--neutral-400)]">已读篇数</div>
-            </div>
-            <div className="rounded-lg bg-[var(--neutral-100)] p-3">
-              <div className="text-xl font-bold">{course.masteredWords}</div>
-              <div className="text-xs text-[var(--neutral-400)]">接触词汇</div>
-            </div>
-          </div>
-        </Link>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {courses.map((course) => (
+            <Link
+              key={course.id}
+              href={`/courses/${course.id}`}
+              className="flex flex-col rounded-lg border border-[var(--neutral-200)] bg-white p-5 transition hover:border-[var(--primary-700)] hover:shadow-sm"
+            >
+              <h2 className="text-lg font-bold text-[var(--neutral-900)]">{course.title}</h2>
+              <p className="mt-1 flex-1 text-sm leading-6 text-[var(--neutral-700)]">{course.subtitle}</p>
+              <div className="mt-4 flex items-center gap-4 text-xs text-[var(--neutral-400)]">
+                <span className="font-semibold text-[var(--primary-800)]">{course.totalArticles} 篇文章</span>
+                <span>{course.masteredWords} 个词汇</span>
+                <span>前 5 篇免费</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
         <div className="mt-5">
           <QuickLinks />
         </div>

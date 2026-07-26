@@ -58,6 +58,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--concurrency", type=int, default=4, help="文章/词典批次的并发数")
     parser.add_argument("--output", required=True, help="输出 JSON 文件路径")
     parser.add_argument("--skip-dict", action="store_true", help="跳过词典数据生成")
+    parser.add_argument("--dict-only", action="store_true", help="只生成词典数据，不生成文章")
     parser.add_argument("--to-supabase", action="store_true", help="课程写入 Supabase（需 backend/.env 配置）")
     parser.add_argument("--mock", action="store_true", help="使用 mock 模型干跑")
     return parser.parse_args()
@@ -154,7 +155,10 @@ async def generate_dictionary(client: AIClient, words: list[str], retries: int, 
 
         async with semaphore:
             try:
-                payload = await client.chat_json(system=system_prompt, user="\n".join(batch))
+                payload = await client.chat_json(
+                    system="You are a JSON API. Output raw JSON only — no markdown fences, no commentary.",
+                    user=f"{system_prompt}\n\n---\nWords:\n" + "\n".join(batch),
+                )
                 got = {str(item.get("word", "")).lower(): item for item in payload.get("entries", []) if item.get("word")}
                 print(f"[dict] 批次 {batch_index}/{total} 完成（{len(got)}/{len(batch)} 词）", flush=True)
                 return batch, got
@@ -219,10 +223,12 @@ async def main() -> None:
     client = AIClient(config)
     writer = ArticleWriter(client)
 
-    course = await generate_articles(pipeline, writer, request, retries=args.retries, concurrency=args.concurrency)
+    course = None
+    if not args.dict_only:
+        course = await generate_articles(pipeline, writer, request, retries=args.retries, concurrency=args.concurrency)
 
     dict_entries: list[dict] = []
-    if not args.skip_dict:
+    if args.dict_only or not args.skip_dict:
         # 词典覆盖全部目标词（含复现词），用课程计划里的词（即清洗后的词表）
         dict_entries = await generate_dictionary(client, words, retries=args.retries, concurrency=args.concurrency)
 
@@ -230,13 +236,14 @@ async def main() -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         json.dumps(
-            {"course": course.model_dump(), "dict_entries": dict_entries},
+            {"course": course.model_dump() if course else None, "dict_entries": dict_entries},
             ensure_ascii=False,
             indent=2,
         ),
         encoding="utf-8",
     )
-    print(f"[out] 已写入 {output_path}（{course.total_articles} 篇文章，{len(dict_entries)} 条词典）")
+    article_count = course.total_articles if course else 0
+    print(f"[out] 已写入 {output_path}（{article_count} 篇文章，{len(dict_entries)} 条词典）")
 
     if args.to_supabase:
         from app.services.supabase_service import SupabaseService
