@@ -3,6 +3,7 @@
 import { ArrowLeft, BookMarked, BookOpen, CheckCircle, History, Languages, Volume2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { QuizDialog } from "@/components/reader/QuizDialog";
 import { getDictEntry, type Article, type Sentence } from "@/lib/seed-data";
 import { lemmaCandidates, resolveInSet, resolveWith } from "@/lib/lemma";
 import { loadProgress, saveProgress, type ArticleProgress } from "@/lib/reading-progress";
@@ -30,7 +31,7 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
   const [flashSentenceId, setFlashSentenceId] = useState<string | null>(null);
   const [dictContext, setDictContext] = useState<DictContext | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [completedOpen, setCompletedOpen] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
   const [translationOpen, setTranslationOpen] = useState(true);
   const [resumeTarget, setResumeTarget] = useState<ArticleProgress | null>(null);
   const wordbookCount = useClientValue(() => loadWordbook().length, 0, WORDBOOK_EVENTS);
@@ -39,8 +40,6 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
   const targetWords = useMemo(() => {
     return new Set(article.paragraphs.flatMap((p) => p.sentences.flatMap((s) => s.targetWords.map((w) => w.toLowerCase()))));
   }, [article]);
-
-  const allTargetWords = useMemo(() => Array.from(targetWords).slice(0, 18), [targetWords]);
 
   // 初始化：恢复进度 / 处理 ?sentence= 深链（放入 rAF 回调，等首帧渲染完成后执行）
   useEffect(() => {
@@ -125,10 +124,13 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
     };
   }, [article.id]);
 
-  const completeReading = () => {
-    saveProgress(article.id, { completed: true, percent: 100 });
+  const finishQuiz = (result: { correct: number; total: number } | null) => {
+    saveProgress(article.id, {
+      completed: true,
+      percent: 100,
+      quiz: result ? { ...result, at: Date.now() } : null,
+    });
     setScrollProgress(100);
-    setCompletedOpen(true);
   };
 
   const speakSentence = (sentence: Sentence) => {
@@ -268,11 +270,11 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
 
             <button
               className="mt-10 inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--primary-800)] text-sm font-semibold text-white shadow-sm"
-              onClick={completeReading}
+              onClick={() => setQuizOpen(true)}
               type="button"
             >
               <CheckCircle size={18} />
-              阅读完成
+              完成阅读，测一测
             </button>
           </div>
         </article>
@@ -302,13 +304,9 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
       </div>
 
       <DictCard context={dictContext} article={article} onClose={() => setDictContext(null)} />
-      <CompletionDialog
-        open={completedOpen}
-        onClose={() => setCompletedOpen(false)}
-        backHref={backHref}
-        words={allTargetWords}
-        progress={scrollProgress}
-      />
+      {quizOpen && (
+        <QuizDialog article={article} backHref={backHref} onClose={() => setQuizOpen(false)} onFinish={finishQuiz} />
+      )}
     </main>
   );
 }
@@ -517,60 +515,6 @@ function DictCard({ context, article, onClose }: { context: DictContext | null; 
         >
           {inWordbook ? "已加入生词本" : "加入生词本"}
         </button>
-      </section>
-    </div>
-  );
-}
-
-function CompletionDialog({
-  open,
-  onClose,
-  backHref,
-  words,
-  progress,
-}: {
-  open: boolean;
-  onClose: () => void;
-  backHref: string;
-  words: string[];
-  progress: number;
-}) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/35 px-5" onClick={onClose}>
-      <section className="mx-auto mt-24 max-w-md rounded-xl bg-white p-5 shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog" aria-label="文章完成">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-sm font-semibold text-[var(--primary-700)]">阅读完成</div>
-            <h2 className="mt-1 text-2xl font-bold text-[var(--neutral-900)]">本篇目标词已接触</h2>
-          </div>
-          <button className="rounded-full bg-[var(--neutral-100)] p-2 text-[var(--neutral-700)]" onClick={onClose} aria-label="关闭">
-            <X size={17} />
-          </button>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {words.map((word) => (
-            <span key={word} className="rounded-full bg-[var(--neutral-100)] px-3 py-1 text-xs font-medium text-[var(--neutral-700)]">
-              {word}
-            </span>
-          ))}
-        </div>
-
-        <div className="mt-5 rounded-lg bg-[var(--neutral-100)] p-4">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="text-[var(--neutral-700)]">阅读进度</span>
-            <span className="font-semibold text-[var(--primary-800)]">{progress}%</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white">
-            <div className="h-full rounded-full bg-[var(--primary-700)]" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-
-        <Link href={backHref} className="mt-5 flex h-11 items-center justify-center rounded-lg bg-[var(--primary-800)] text-sm font-semibold text-white">
-          返回课程列表
-        </Link>
       </section>
     </div>
   );
