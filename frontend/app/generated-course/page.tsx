@@ -1,70 +1,94 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookOpen, CheckCircle2, FilePlus2 } from "lucide-react";
+import { ArrowLeft, BookOpen, FilePlus2, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { loadGeneratedCourse } from "@/lib/generated-course";
-import type { GeneratedCourseResponse } from "@/lib/api";
+import { deleteGeneratedCourse, loadGeneratedCourses, type StoredGeneratedCourse } from "@/lib/generated-course";
+import { GENERATED_COURSE_EVENTS, useClientValue } from "@/lib/use-client-value";
 
-export default function GeneratedCoursePage() {
-  const [course] = useState<GeneratedCourseResponse | null>(() => loadGeneratedCourse());
+const EMPTY_COURSES: StoredGeneratedCourse[] = [];
 
-  if (!course) {
-    return (
-      <main className="min-h-screen bg-[var(--neutral-50)] px-5 py-8">
-        <section className="mx-auto max-w-xl rounded-lg bg-white p-6 text-center shadow-sm">
-          <h1 className="text-2xl font-bold text-[var(--neutral-900)]">还没有生成课程</h1>
-          <p className="mt-3 text-sm leading-7 text-[var(--neutral-700)]">先创建一个自定义词库，生成完成后会自动进入这里。</p>
-          <Link href="/library/new" className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--primary-800)] px-5 text-sm font-semibold text-white">
-            <FilePlus2 size={17} />
-            新建词库
-          </Link>
-        </section>
-      </main>
-    );
-  }
+export default function GeneratedCourseListPage() {
+  const courses = useClientValue(loadGeneratedCourses, EMPTY_COURSES, GENERATED_COURSE_EVENTS);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  const removeCourse = (id: string) => {
+    deleteGeneratedCourse(id);
+    setConfirmingId(null);
+  };
 
   return (
     <main className="min-h-screen bg-[var(--neutral-50)] px-5 py-5">
       <div className="mx-auto max-w-4xl">
-        <Link href="/library/new" className="mb-5 inline-flex h-10 items-center gap-2 rounded-lg bg-white px-3 text-sm text-[var(--neutral-700)] shadow-sm">
-          <ArrowLeft size={17} />
-          返回导入
-        </Link>
+        <div className="mb-5 flex flex-wrap gap-3">
+          <Link href="/" className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-3 text-sm text-[var(--neutral-700)] shadow-sm">
+            <ArrowLeft size={17} />
+            返回首页
+          </Link>
+          <Link href="/library/new" className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-3 text-sm text-[var(--neutral-700)] shadow-sm">
+            <FilePlus2 size={17} />
+            新建词库
+          </Link>
+        </div>
 
         <section className="rounded-lg bg-[var(--primary-800)] p-5 text-white">
-          <div className="text-sm text-white/70">自定义生成课程</div>
-          <h1 className="mt-1 text-3xl font-bold">{course.course_title}</h1>
-          <p className="mt-2 text-sm text-white/75">共 {course.total_words} 个有效词，生成 {course.total_articles} 篇文章。</p>
+          <div className="text-sm text-white/70">自定义生成</div>
+          <h1 className="mt-1 text-3xl font-bold">我的生成课程</h1>
+          <p className="mt-2 text-sm text-white/75">共 {courses.length} 套课程，全部由你的词库 AI 生成。</p>
         </section>
 
-        <section className="mt-5 grid gap-3">
-          {course.articles.map((article) => (
-            <Link
-              key={article.index}
-              href={`/generated-read/${article.index}`}
-              className="flex gap-4 rounded-lg border border-[var(--neutral-200)] bg-white p-4 transition hover:border-[var(--primary-700)]"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--primary-100)] text-sm font-bold text-[var(--primary-800)]">
-                {String(article.index).padStart(2, "0")}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 text-xs font-semibold text-[var(--primary-700)]">{article.topic}</div>
-                <h2 className="text-base font-semibold leading-snug text-[var(--neutral-900)]">{article.title}</h2>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--neutral-400)]">
-                  <span className="inline-flex items-center gap-1">
-                    <BookOpen size={13} />
-                    {article.target_word_count} 个目标词
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <CheckCircle2 size={13} />
-                    覆盖率 {Math.round(article.quality.coverage * 100)}%
-                  </span>
-                </div>
-              </div>
+        {courses.length === 0 ? (
+          <section className="mt-5 rounded-lg bg-white p-8 text-center shadow-sm">
+            <h2 className="text-xl font-bold text-[var(--neutral-900)]">还没有生成课程</h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--neutral-700)]">先创建一个自定义词库，生成完成后会出现在这里。</p>
+            <Link href="/library/new" className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--primary-800)] px-5 text-sm font-semibold text-white">
+              <FilePlus2 size={17} />
+              新建词库
             </Link>
-          ))}
-        </section>
+          </section>
+        ) : (
+          <section className="mt-5 grid gap-3">
+            {courses.map((stored) => (
+              <div key={stored.id} className="rounded-lg border border-[var(--neutral-200)] bg-white p-4 transition hover:border-[var(--primary-700)]">
+                <div className="flex items-start gap-4">
+                  <Link href={`/generated-course/${stored.id}`} className="min-w-0 flex-1">
+                    <h2 className="text-lg font-semibold text-[var(--neutral-900)]">{stored.name}</h2>
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-[var(--neutral-400)]">
+                      <span className="inline-flex items-center gap-1">
+                        <BookOpen size={13} />
+                        {stored.course.total_articles} 篇文章
+                      </span>
+                      <span>{stored.course.total_words} 个词</span>
+                      <span>{new Date(stored.createdAt).toLocaleDateString("zh-CN")}</span>
+                    </div>
+                  </Link>
+                  <button
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--neutral-100)] text-[var(--neutral-400)] transition hover:text-red-500"
+                    onClick={() => setConfirmingId(stored.id)}
+                    type="button"
+                    aria-label={`删除课程 ${stored.name}`}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
+                {confirmingId === stored.id && (
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm">
+                    <span className="text-red-700">删除后无法恢复，确认删除这套课程？</span>
+                    <div className="flex shrink-0 gap-2">
+                      <button className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold text-white" onClick={() => removeCourse(stored.id)} type="button">
+                        确认删除
+                      </button>
+                      <button className="rounded-full border border-[var(--neutral-200)] bg-white px-3 py-1.5 text-xs" onClick={() => setConfirmingId(null)} type="button">
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </section>
+        )}
       </div>
     </main>
   );

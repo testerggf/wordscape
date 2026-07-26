@@ -2,22 +2,22 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { use, useState } from "react";
+import { use } from "react";
 import { ReaderView } from "@/components/reader/ReaderView";
-import { loadGeneratedCourse, toReaderArticle } from "@/lib/generated-course";
-import type { Article } from "@/lib/seed-data";
+import { getGeneratedCourse, toReaderArticle } from "@/lib/generated-course";
+import { NO_EVENTS, useClientValue } from "@/lib/use-client-value";
 
 interface GeneratedReadPageProps {
-  params: Promise<{ articleId: string }>;
+  params: Promise<{ courseId: string; articleIndex: string }>;
 }
 
 export default function GeneratedReadPage({ params }: GeneratedReadPageProps) {
-  const { articleId } = use(params);
-  const [article] = useState<Article | null>(() => {
-    const course = loadGeneratedCourse();
-    if (!course) return null;
-    return toReaderArticle(course, Number(articleId));
-  });
+  const { courseId, articleIndex } = use(params);
+  const article = useClientValue(() => {
+    const stored = getGeneratedCourse(courseId);
+    if (!stored) return null;
+    return toReaderArticle(stored, Number(articleIndex));
+  }, null, NO_EVENTS);
 
   if (!article) {
     return (
@@ -33,5 +33,5 @@ export default function GeneratedReadPage({ params }: GeneratedReadPageProps) {
     );
   }
 
-  return <ReaderView article={article} />;
+  return <ReaderView article={article} backHref={`/generated-course/${courseId}`} />;
 }

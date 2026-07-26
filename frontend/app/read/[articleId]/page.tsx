@@ -14,5 +14,5 @@ export default async function ReadPage({ params }: ReadPageProps) {
     notFound();
   }
 
-  return <ReaderView article={article} />;
+  return <ReaderView article={article} backHref={`/courses/${article.courseId}`} />;
 }

@@ -3,15 +3,33 @@
 import Link from "next/link";
 import { Check, Lock, X } from "lucide-react";
 import { useState } from "react";
+import { loadProgress } from "@/lib/reading-progress";
+import { NO_EVENTS, useClientValue } from "@/lib/use-client-value";
 import { cn } from "@/lib/utils";
-import type { Article } from "@/lib/seed-data";
+import type { Article, ReadingStatus } from "@/lib/seed-data";
 
 interface ArticleCardProps {
   article: Article;
 }
 
-export function ArticleCard({ article }: ArticleCardProps) {
+export function ArticleCard({ article: seedArticle }: ArticleCardProps) {
   const [paywallOpen, setPaywallOpen] = useState(false);
+
+  // 本地真实进度覆盖种子数据的演示状态（服务端渲染时为 null）
+  const localProgress = useClientValue(
+    () => (seedArticle.status === "locked" ? null : loadProgress(seedArticle.id)),
+    null,
+    NO_EVENTS,
+  );
+
+  const article =
+    localProgress && localProgress.updatedAt > 0
+      ? {
+          ...seedArticle,
+          status: (localProgress.completed ? "done" : localProgress.percent > 0 ? "reading" : "unread") as ReadingStatus,
+          progress: localProgress.completed ? 100 : localProgress.percent,
+        }
+      : seedArticle;
   const locked = article.status === "locked";
 
   const card = (

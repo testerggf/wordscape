@@ -11,6 +11,7 @@ import {
   type PersistGeneratedCourseResponse,
   type VocabPreviewResponse,
 } from "@/lib/api";
+import { addGeneratedCourse } from "@/lib/generated-course";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const SAMPLE_WORDS = `academic
@@ -95,12 +96,9 @@ export default function NewLibraryPage() {
         generated_course: result,
       });
 
-      localStorage.setItem("wordscape:generated-course", JSON.stringify({
-        ...result,
-        persisted,
-      }));
+      const stored = addGeneratedCourse(name, result, persisted);
       setMessage("已保存到 Supabase，正在打开课程。");
-      router.push("/generated-course");
+      router.push(`/generated-course/${stored.id}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "生成失败");
     } finally {

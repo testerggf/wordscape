@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, FilePlus2, Settings, Sparkles } from "lucide-react";
+import { QuickLinks } from "@/components/home/QuickLinks";
 import { courses } from "@/lib/seed-data";
 
 export default function Home() {
@@ -67,7 +68,10 @@ export default function Home() {
             </div>
           </div>
         </Link>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="mt-5">
+          <QuickLinks />
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Link href="/library/new" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-[var(--primary-800)] px-5 text-sm font-semibold text-white">
             <FilePlus2 size={17} />
             导入词汇生成课程

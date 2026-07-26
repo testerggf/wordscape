@@ -1,29 +1,40 @@
 "use client";
 
-import { ArrowLeft, BookOpen, CheckCircle, Languages, Volume2, X } from "lucide-react";
+import { ArrowLeft, BookMarked, BookOpen, CheckCircle, History, Languages, Volume2, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getDictEntry, type Article, type Sentence } from "@/lib/seed-data";
+import { lemmaCandidates, resolveInSet, resolveWith } from "@/lib/lemma";
+import { loadProgress, saveProgress, type ArticleProgress } from "@/lib/reading-progress";
+import { addWordbookEntry, isInWordbook, loadWordbook, removeWordbookEntry } from "@/lib/wordbook";
+import { WORDBOOK_EVENTS, useClientValue } from "@/lib/use-client-value";
 import { cn } from "@/lib/utils";
 
 interface ReaderViewProps {
   article: Article;
+  /** 返回课程列表的链接 */
+  backHref: string;
+}
+
+interface DictContext {
+  rawWord: string;
+  sentence: Sentence;
 }
 
 type Token =
   | { type: "word"; value: string; key: string }
   | { type: "text"; value: string; key: string };
 
-export function ReaderView({ article }: ReaderViewProps) {
+export function ReaderView({ article, backHref }: ReaderViewProps) {
   const [activeSentenceId, setActiveSentenceId] = useState<string | null>(null);
-  const [dictWord, setDictWord] = useState<string | null>(null);
-  const [scrollProgress, setScrollProgress] = useState(() => {
-    if (typeof window === "undefined") return article.progress || 0;
-    const saved = localStorage.getItem(`wordscape:progress:${article.id}`);
-    return Math.max(article.progress || 0, saved ? Number(saved) : 0);
-  });
+  const [flashSentenceId, setFlashSentenceId] = useState<string | null>(null);
+  const [dictContext, setDictContext] = useState<DictContext | null>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [completedOpen, setCompletedOpen] = useState(false);
   const [translationOpen, setTranslationOpen] = useState(true);
+  const [resumeTarget, setResumeTarget] = useState<ArticleProgress | null>(null);
+  const wordbookCount = useClientValue(() => loadWordbook().length, 0, WORDBOOK_EVENTS);
+  const lastSaveAt = useRef(0);
 
   const targetWords = useMemo(() => {
     return new Set(article.paragraphs.flatMap((p) => p.sentences.flatMap((s) => s.targetWords.map((w) => w.toLowerCase()))));
@@ -31,23 +42,92 @@ export function ReaderView({ article }: ReaderViewProps) {
 
   const allTargetWords = useMemo(() => Array.from(targetWords).slice(0, 18), [targetWords]);
 
+  // 初始化：恢复进度 / 处理 ?sentence= 深链（放入 rAF 回调，等首帧渲染完成后执行）
   useEffect(() => {
-    const handleScroll = () => {
+    let flashTimer: ReturnType<typeof setTimeout> | undefined;
+    const frame = requestAnimationFrame(() => {
+      const progress = loadProgress(article.id);
+      setScrollProgress(progress.completed ? 100 : progress.percent);
+
+      const deepLink = new URLSearchParams(window.location.search).get("sentence");
+      if (deepLink) {
+        scrollToSentence(deepLink, "auto");
+        setFlashSentenceId(deepLink);
+        flashTimer = setTimeout(() => setFlashSentenceId(null), 2600);
+        return;
+      }
+
+      if (!progress.completed && progress.percent >= 5 && progress.anchorSentenceId) {
+        setResumeTarget(progress);
+      }
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      if (flashTimer) clearTimeout(flashTimer);
+    };
+  }, [article.id]);
+
+  // 滚动：更新百分比 + 句子锚点；节流写入并带尾随保存，避免丢掉滚动结束时的位置
+  useEffect(() => {
+    let ticking = false;
+    let trailing: ReturnType<typeof setTimeout> | undefined;
+
+    const persistNow = () => {
       const doc = document.documentElement;
       const maxScroll = doc.scrollHeight - window.innerHeight;
-      const nextProgress = maxScroll <= 0 ? 100 : Math.round((window.scrollY / maxScroll) * 100);
-      const bounded = Math.max(article.progress || 0, Math.min(100, nextProgress));
-      setScrollProgress(bounded);
-      localStorage.setItem(`wordscape:progress:${article.id}`, String(bounded));
+      const rawPercent = maxScroll <= 0 ? 99 : Math.round((window.scrollY / maxScroll) * 100);
+      const saved = loadProgress(article.id);
+      const percent = saved.completed ? 100 : Math.min(99, Math.max(saved.percent, rawPercent));
+      const anchor = findAnchorSentence();
+      saveProgress(article.id, {
+        percent,
+        anchorSentenceId: anchor ?? saved.anchorSentenceId,
+      });
     };
 
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        ticking = false;
+        const doc = document.documentElement;
+        const maxScroll = doc.scrollHeight - window.innerHeight;
+        const rawPercent = maxScroll <= 0 ? 99 : Math.round((window.scrollY / maxScroll) * 100);
+
+        const saved = loadProgress(article.id);
+        const percent = saved.completed ? 100 : Math.min(99, Math.max(saved.percent, rawPercent));
+        setScrollProgress(percent);
+
+        const now = Date.now();
+        if (now - lastSaveAt.current >= 500) {
+          lastSaveAt.current = now;
+          persistNow();
+        } else {
+          clearTimeout(trailing);
+          trailing = setTimeout(() => {
+            lastSaveAt.current = Date.now();
+            persistNow();
+          }, 600);
+        }
+      });
+    };
+
+    const persistOnHide = () => persistNow();
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [article.id, article.progress]);
+    window.addEventListener("pagehide", persistOnHide);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("pagehide", persistOnHide);
+      clearTimeout(trailing);
+    };
+  }, [article.id]);
 
   const completeReading = () => {
+    saveProgress(article.id, { completed: true, percent: 100 });
     setScrollProgress(100);
-    localStorage.setItem(`wordscape:progress:${article.id}`, "100");
     setCompletedOpen(true);
   };
 
@@ -67,12 +147,21 @@ export function ReaderView({ article }: ReaderViewProps) {
     window.speechSynthesis.speak(utterance);
   };
 
+  const resumeReading = () => {
+    if (resumeTarget?.anchorSentenceId) {
+      scrollToSentence(resumeTarget.anchorSentenceId, "smooth");
+      setFlashSentenceId(resumeTarget.anchorSentenceId);
+      setTimeout(() => setFlashSentenceId(null), 2600);
+    }
+    setResumeTarget(null);
+  };
+
   return (
     <main className="min-h-screen bg-[var(--neutral-100)] text-[var(--neutral-900)]">
       <header className="sticky top-0 z-20 border-b border-[var(--neutral-200)] bg-[var(--neutral-100)]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
           <Link
-            href={article.courseId === "generated" ? "/generated-course" : `/courses/${article.courseId}`}
+            href={backHref}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--neutral-700)] shadow-sm"
             aria-label="返回课程"
           >
@@ -84,6 +173,18 @@ export function ReaderView({ article }: ReaderViewProps) {
               <div className="h-full rounded-full bg-[var(--primary-700)]" style={{ width: `${scrollProgress}%` }} />
             </div>
           </div>
+          <Link
+            href="/wordbook"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--neutral-700)] shadow-sm"
+            aria-label="生词本"
+          >
+            <BookMarked size={18} />
+            {wordbookCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent-400)] px-1 text-[10px] font-bold text-white">
+                {wordbookCount > 99 ? "99+" : wordbookCount}
+              </span>
+            )}
+          </Link>
           <button
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--neutral-700)] shadow-sm"
             aria-label="朗读首句"
@@ -96,6 +197,31 @@ export function ReaderView({ article }: ReaderViewProps) {
           </button>
         </div>
       </header>
+
+      {resumeTarget && (
+        <div className="sticky top-[65px] z-10 border-b border-[var(--accent-200)] bg-[#FFF8EF]">
+          <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 text-sm">
+            <History size={16} className="shrink-0 text-[var(--accent-600)]" />
+            <span className="min-w-0 flex-1 text-[var(--neutral-700)]">
+              上次读到 {resumeTarget.percent}%（第 {resumeTarget.anchorSentenceId?.split("-")[0]} 段），要继续吗？
+            </span>
+            <button
+              className="shrink-0 rounded-full bg-[var(--primary-800)] px-4 py-1.5 text-xs font-semibold text-white"
+              onClick={resumeReading}
+              type="button"
+            >
+              继续阅读
+            </button>
+            <button
+              className="shrink-0 rounded-full border border-[var(--neutral-200)] bg-white px-3 py-1.5 text-xs text-[var(--neutral-700)]"
+              onClick={() => setResumeTarget(null)}
+              type="button"
+            >
+              从头开始
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className={cn("mx-auto grid max-w-6xl gap-0", translationOpen ? "lg:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]" : "lg:grid-cols-1")}>
         <article className={cn("px-5 pt-8 lg:px-10", translationOpen ? "pb-52 lg:pb-16" : "pb-16")}>
@@ -131,8 +257,9 @@ export function ReaderView({ article }: ReaderViewProps) {
                       sentence={sentence}
                       targetWords={targetWords}
                       active={activeSentenceId === sentence.id}
+                      flashed={flashSentenceId === sentence.id}
                       onActivate={() => speakSentence(sentence)}
-                      onOpenDict={setDictWord}
+                      onOpenDict={(rawWord) => setDictContext({ rawWord, sentence })}
                     />
                   ))}
                 </p>
@@ -174,11 +301,11 @@ export function ReaderView({ article }: ReaderViewProps) {
         )}
       </div>
 
-      <DictCard word={dictWord} onClose={() => setDictWord(null)} />
+      <DictCard context={dictContext} article={article} onClose={() => setDictContext(null)} />
       <CompletionDialog
         open={completedOpen}
         onClose={() => setCompletedOpen(false)}
-        courseId={article.courseId}
+        backHref={backHref}
         words={allTargetWords}
         progress={scrollProgress}
       />
@@ -186,22 +313,48 @@ export function ReaderView({ article }: ReaderViewProps) {
   );
 }
 
+function scrollToSentence(sentenceId: string, behavior: ScrollBehavior) {
+  requestAnimationFrame(() => {
+    document.getElementById(`s-${sentenceId}`)?.scrollIntoView({ behavior, block: "center" });
+  });
+}
+
+function findAnchorSentence(): string | null {
+  const nodes = document.querySelectorAll<HTMLElement>("[data-sentence-id]");
+  let anchor: string | null = null;
+
+  for (const node of nodes) {
+    if (node.getBoundingClientRect().top > 160) break;
+    anchor = node.dataset.sentenceId ?? null;
+  }
+
+  return anchor ?? nodes[0]?.dataset.sentenceId ?? null;
+}
+
 function SentenceBlock({
   sentence,
   targetWords,
   active,
+  flashed,
   onActivate,
   onOpenDict,
 }: {
   sentence: Sentence;
   targetWords: Set<string>;
   active: boolean;
+  flashed: boolean;
   onActivate: () => void;
   onOpenDict: (word: string) => void;
 }) {
   return (
     <span
-      className={cn("cursor-pointer rounded px-1 transition-colors", active && "bg-[var(--primary-100)]")}
+      id={`s-${sentence.id}`}
+      data-sentence-id={sentence.id}
+      className={cn(
+        "cursor-pointer rounded px-1 transition-colors",
+        active && "bg-[var(--primary-100)]",
+        flashed && "bg-[rgba(244,162,97,0.35)]",
+      )}
       onClick={onActivate}
     >
       {tokenize(sentence.en).map((token) => {
@@ -209,26 +362,25 @@ function SentenceBlock({
           return <span key={token.key}>{token.value}</span>;
         }
 
-        const normalized = token.value.toLowerCase();
-        const isTarget = targetWords.has(normalized);
+        const matchedTarget = resolveInSet(token.value, targetWords);
 
         return (
           <span
             key={token.key}
             className={cn(
               "rounded-sm px-0.5 transition",
-              isTarget
+              matchedTarget
                 ? "cursor-pointer border-b-2 border-[var(--accent-400)] bg-[rgba(244,162,97,0.32)] hover:bg-[rgba(244,162,97,0.58)]"
                 : "cursor-text hover:bg-white/70",
             )}
             onClick={(event) => {
-              if (!isTarget) return;
+              if (!matchedTarget) return;
               event.stopPropagation();
-              onOpenDict(normalized);
+              onOpenDict(token.value);
             }}
             onDoubleClick={(event) => {
               event.stopPropagation();
-              onOpenDict(normalized);
+              onOpenDict(token.value);
             }}
           >
             {token.value}
@@ -239,23 +391,19 @@ function SentenceBlock({
   );
 }
 
-function DictCard({ word, onClose }: { word: string | null; onClose: () => void }) {
-  const [wordbook, setWordbook] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    const saved = localStorage.getItem("wordscape:wordbook");
-    if (!saved) return [];
+const EMPTY_WORDBOOK: never[] = [];
 
-    try {
-      return JSON.parse(saved) as string[];
-    } catch {
-      return [];
-    }
-  });
+function DictCard({ context, article, onClose }: { context: DictContext | null; article: Article; onClose: () => void }) {
+  const wordbook = useClientValue(loadWordbook, EMPTY_WORDBOOK, WORDBOOK_EVENTS);
 
-  if (!word) return null;
+  if (!context) return null;
 
-  const entry = getDictEntry(word);
-  const inWordbook = wordbook.includes(word);
+  const { rawWord, sentence } = context;
+  const resolved = resolveWith(rawWord, (candidate) => getDictEntry(candidate));
+  const entry = resolved?.value;
+  // 生词本归一键：词典词条优先，其次是原形候选（小写原词）
+  const wordKey = entry?.word ?? lemmaCandidates(rawWord)[0] ?? rawWord.toLowerCase();
+  const inWordbook = isInWordbook(wordbook, wordKey);
 
   const speakWord = () => {
     if (!("speechSynthesis" in window)) {
@@ -263,16 +411,27 @@ function DictCard({ word, onClose }: { word: string | null; onClose: () => void 
     }
 
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(entry?.word ?? word);
+    const utterance = new SpeechSynthesisUtterance(entry?.word ?? rawWord);
     utterance.lang = "en-US";
     utterance.rate = 0.82;
     window.speechSynthesis.speak(utterance);
   };
 
   const toggleWordbook = () => {
-    const next = inWordbook ? wordbook.filter((item) => item !== word) : [...wordbook, word];
-    setWordbook(next);
-    localStorage.setItem("wordscape:wordbook", JSON.stringify(next));
+    if (inWordbook) {
+      removeWordbookEntry(wordKey);
+      return;
+    }
+
+    addWordbookEntry({
+      word: wordKey,
+      articleId: article.id,
+      articleTitle: article.title,
+      readHref: window.location.pathname,
+      sentenceId: sentence.id,
+      sentenceEn: sentence.en,
+      sentenceZh: sentence.zh,
+    });
   };
 
   return (
@@ -281,20 +440,23 @@ function DictCard({ word, onClose }: { word: string | null; onClose: () => void 
         className="absolute inset-x-0 bottom-0 max-h-[72vh] overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl md:bottom-auto md:left-auto md:right-6 md:top-24 md:w-80 md:rounded-xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
-        aria-label={`${word} dictionary card`}
+        aria-label={`${wordKey} dictionary card`}
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--neutral-200)] md:hidden" />
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-3">
             <div className="min-w-0">
-              <h2 className="font-serif text-2xl font-bold text-[var(--neutral-900)]">{entry?.word ?? word}</h2>
+              <h2 className="font-serif text-2xl font-bold text-[var(--neutral-900)]">{entry?.word ?? wordKey}</h2>
+              {entry && entry.word !== rawWord.toLowerCase() && (
+                <p className="mt-0.5 text-xs text-[var(--neutral-400)]">原文形式：{rawWord}</p>
+              )}
               <p className="mt-1 font-mono text-sm text-[var(--neutral-400)]">{entry?.phonetic ?? "暂无音标"}</p>
             </div>
             <button
               className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary-100)] text-[var(--primary-800)]"
               onClick={speakWord}
               type="button"
-              aria-label={`朗读 ${entry?.word ?? word}`}
+              aria-label={`朗读 ${entry?.word ?? rawWord}`}
             >
               <Volume2 size={17} />
             </button>
@@ -333,22 +495,28 @@ function DictCard({ word, onClose }: { word: string | null; onClose: () => void 
                 ))}
               </div>
             </div>
-
-            <button
-              className={cn(
-                "w-full rounded-lg py-3 text-sm font-semibold",
-                inWordbook ? "bg-[var(--primary-100)] text-[var(--primary-900)]" : "bg-[var(--primary-800)] text-white",
-              )}
-              onClick={toggleWordbook}
-            >
-              {inWordbook ? "已加入生词本" : "加入生词本"}
-            </button>
           </div>
         ) : (
-          <div className="mt-5 rounded-lg bg-[var(--neutral-100)] p-4 text-sm leading-6 text-[var(--neutral-700)]">
-            本地示例词典里还没有这个词。后续接入词典生成和数据库后会自动补全。
+          <div className="mt-5 space-y-4">
+            <div className="rounded-lg bg-[var(--neutral-100)] p-4 text-sm leading-6 text-[var(--neutral-700)]">
+              本地词典还没有这个词的完整词条，可以先加入生词本，语境例句已为你保存。
+            </div>
+            <div className="rounded-lg border border-[var(--neutral-200)] p-4 text-sm leading-6">
+              <p className="font-serif italic text-[var(--neutral-900)]">{sentence.en}</p>
+              <p className="mt-1 text-[var(--neutral-500)]">{sentence.zh}</p>
+            </div>
           </div>
         )}
+
+        <button
+          className={cn(
+            "mt-5 w-full rounded-lg py-3 text-sm font-semibold",
+            inWordbook ? "bg-[var(--primary-100)] text-[var(--primary-900)]" : "bg-[var(--primary-800)] text-white",
+          )}
+          onClick={toggleWordbook}
+        >
+          {inWordbook ? "已加入生词本" : "加入生词本"}
+        </button>
       </section>
     </div>
   );
@@ -357,13 +525,13 @@ function DictCard({ word, onClose }: { word: string | null; onClose: () => void 
 function CompletionDialog({
   open,
   onClose,
-  courseId,
+  backHref,
   words,
   progress,
 }: {
   open: boolean;
   onClose: () => void;
-  courseId: string;
+  backHref: string;
   words: string[];
   progress: number;
 }) {
@@ -400,7 +568,7 @@ function CompletionDialog({
           </div>
         </div>
 
-        <Link href={courseId === "generated" ? "/generated-course" : `/courses/${courseId}`} className="mt-5 flex h-11 items-center justify-center rounded-lg bg-[var(--primary-800)] text-sm font-semibold text-white">
+        <Link href={backHref} className="mt-5 flex h-11 items-center justify-center rounded-lg bg-[var(--primary-800)] text-sm font-semibold text-white">
           返回课程列表
         </Link>
       </section>
