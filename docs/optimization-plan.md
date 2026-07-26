@@ -103,12 +103,15 @@ MVP 已跑通两条核心链路（内置课程阅读 / 自定义词库生成）�
 
 ## 七、批次 D：内容补齐（P0，可并行）
 
-- [x] 编写 `backend/scripts/generate_builtin_course.py` 批量生成脚本：单篇质检重试、进度输出、mock 干跑模式、`--to-supabase` 上库（前 5 篇 is_free）。
-- [x] 词典批量生成：`prompts/dict_generation.txt` + 20 词一批生成、缺词自动补跑；随课程一并输出 JSON。
-- [x] mock 模式干跑验证通过（文章 + 词典 JSON 结构完整）。
-- [ ] 用官方 Key 生成内置四级课程全部 40 篇文章（**待用户提供 CET-4 词表文件与 API Key 后执行**：`python scripts/generate_builtin_course.py --vocab cet4.txt --api-key ... --output out/cet4.json --to-supabase`）。
-- [ ] 抽查质检：每话题抽 1 篇人工检查目标词覆盖率、可读性、中文翻译质量。
-- [ ] 种子数据替换为真实 40 篇（内容生成后接入）。
+- [x] 编写 `backend/scripts/generate_builtin_course.py` 批量生成脚本：单篇质检重试、并发生成、进度输出、mock 干跑、`--dict-only`、`--to-supabase` 上库（前 5 篇 is_free）。
+- [x] 词典批量生成：`prompts/dict_generation.txt` + 20 词一批并发生成、缺词自动补跑。
+- [x] 范围扩展为 **7 套内置词库**：小学 435 / 初中 1818 / 高中 3427 / 四级 4528 / 六级核心 2219 / 日常高频（COCA）2000 / 职场商务（BEC）2819，词表已从 GitHub 拉取并清洗入库（`backend/data/builtin_vocabs/`）。
+- [x] 生成质量调优：Prompt 长度/密度硬约束（10× 目标词数、单句 ≤2 目标词）；指令移入 user 消息适配中转；规划器合并小话题块（≥30 词/篇）。
+- [x] 词典按 7229 词并集去重生成一遍，前端合并为 `public/dict/builtin.json` 懒加载。
+- [x] 前端多内置课程架构：`data/courses/*.json` + 首页词库网格 + 各课程前 5 篇免费。
+- [ ] 全量生成执行中（`generate_all.sh`，模型 claude-fable-5，共 172 篇 + 并集词典）：小学已完成并上线，其余套次按序生成，完成后自动导出。
+- [ ] 抽查质检：每套课程抽 1-2 篇人工检查覆盖率、可读性、翻译质量。
+- [ ] `--to-supabase` 上库与 RLS 验证（待 Supabase 密钥轮换后执行）。
 
 **验收标准**：课程列表展示完整 40 篇；免费/付费边界正确；随机抽查文章词典卡片无"暂无"。
 

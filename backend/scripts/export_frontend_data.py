@@ -45,9 +45,13 @@ def main() -> None:
         print(f"[course] {course_id}: {course['total_articles']} 篇 → {target.relative_to(FRONTEND.parent)}")
         exported += 1
 
-    # 合并词典：并集词典优先，各课程自带词典兜底
+    # 合并词典：并集词典优先，其余 dict_* 分片与各课程自带词典兜底
     merged: dict[str, dict] = {}
-    dict_sources = [OUT_DIR / "dict_all.json"] + [OUT_DIR / f"{cid}_course.json" for cid in COURSE_IDS]
+    dict_sources = (
+        [OUT_DIR / "dict_all.json"]
+        + sorted(OUT_DIR.glob("dict_*.json"))
+        + [OUT_DIR / f"{cid}_course.json" for cid in COURSE_IDS]
+    )
     for source in dict_sources:
         if not source.exists():
             continue
