@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>词境 WordScape · 交互原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+SC:wght@400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary-900: #0D2B1F;
+    --primary-800: #1B4332;
+    --primary-700: #2D6A4F;
+    --primary-600: #40916C;
+    --primary-100: #D8F3DC;
+    --primary-50:  #F0FAF2;
+    --neutral-50:  #FAFAF8;
+    --neutral-100: #F5F0E8;
+    --neutral-200: #E8E2D9;
+    --neutral-400: #9E9589;
+    --neutral-700: #4A4540;
+    --neutral-900: #1C1917;
+    --accent-400:  #F4A261;
+    --accent-200:  #FDDCB5;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  /* ── 设备外壳 ── */
+  .device {
+    width: 390px;
+    height: 844px;
+    background: #000;
+    border-radius: 50px;
+    padding: 12px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 0 0 1px #333;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .device-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 40px;
+    overflow: hidden;
+    background: var(--neutral-50);
+    position: relative;
+  }
+  .device-notch {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 34px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 100;
+  }
+
+  /* ── 页面容器 ── */
+  .page {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: none;
+    flex-direction: column;
+    background: var(--neutral-50);
+    scrollbar-width: none;
+  }
+  .page::-webkit-scrollbar { display: none; }
+  .page.active { display: flex; }
+
+  /* ── 顶部状态栏占位 ── */
+  .status-bar {
+    height: 50px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 24px 6px;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--neutral-700);
+    position: relative;
+    z-index: 10;
+  }
+
+  /* ── 底部导航 ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: rgba(250,250,248,0.95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--neutral-200);
+    display: flex;
+    align-items: flex-start;
+    padding-top: 10px;
+    z-index: 50;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: all 0.2s;
+  }
+  .nav-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+  }
+  .nav-label {
+    font-size: 10px;
+    color: var(--neutral-400);
+    font-weight: 500;
+  }
+  .nav-item.active .nav-label { color: var(--primary-800); }
+  .nav-item.active .nav-icon { transform: scale(1.1); }
+
+  /* ── 通用卡片 ── */
+  .card {
+    background: #fff;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--neutral-200);
+    overflow: hidden;
+  }
+
+  /* ── 按钮 ── */
+  .btn-primary {
+    background: var(--primary-800);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary:active { transform: scale(0.97); background: var(--primary-700); }
+  .btn-outline {
+    background: transparent;
+    color: var(--primary-800);
+    border: 1.5px solid var(--primary-800);
+    border-radius: var(--radius-md);
+    padding: 13px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s;
+  }
+
+  /* ── 页面标题区 ── */
+  .page-header {
+    padding: 8px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .back-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--neutral-100);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .back-btn:active { transform: scale(0.9); }
+  .page-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--neutral-900);
+  }
+
+  /* ══════════════════════════════
+     P1 · 首页（文章列表）
+  ══════════════════════════════ */
+  #page-home .hero-bar {
+    background: var(--primary-800);
+    padding: 50px 20px 20px;
+    color: #fff;
+  }
+  #page-home .hero-greeting {
+    font-size: 13px;
+    opacity: 0.7;
+    margin-bottom: 2px;
+  }
+  #page-home .hero-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  #page-home .progress-ring-wrap {
+    background: rgba(255,255,255,0.12);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  #page-home .ring-svg { flex-shrink: 0; }
+  #page-home .ring-info-label { font-size: 12px; opacity: 0.7; }
+  #page-home .ring-info-value { font-size: 22px; font-weight: 700; }
+  #page-home .ring-info-sub { font-size: 11px; opacity: 0.6; margin-top: 2px; }
+
+  .topic-scroll {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .topic-scroll::-webkit-scrollbar { display: none; }
+  .topic-tag {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1.5px solid var(--neutral-200);
+    background: #fff;
+    color: var(--neutral-700);
+  }
+  .topic-tag.active {
+    background: var(--primary-800);
+    color: #fff;
+    border-color: var(--primary-800);
+  }
+
+  .article-list { padding: 12px 20px 100px; display: flex; flex-direction: column; gap: 10px; }
+
+  .article-card {
+    background: #fff;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--neutral-200);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .article-card:active { transform: scale(0.98); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .article-card.locked { opacity: 0.6; }
+
+  .article-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .article-num.done { background: var(--primary-600); color: #fff; }
+  .article-num.reading { background: var(--primary-100); color: var(--primary-800); }
+  .article-num.unread { background: var(--neutral-100); color: var(--neutral-400); border: 1.5px solid var(--neutral-200); }
+  .article-num.locked { background: var(--neutral-100); color: var(--neutral-400); }
+
+  .article-info { flex: 1; min-width: 0; }
+  .article-topic { font-size: 11px; color: var(--primary-700); font-weight: 600; margin-bottom: 3px; letter-spacing: 0.3px; }
+  .article-title { font-size: 15px; font-weight: 600; color: var(--neutral-900); margin-bottom: 6px; line-height: 1.4; }
+  .article-meta { font-size: 12px; color: var(--neutral-400); display: flex; gap: 8px; }
+
+  .article-progress-bar {
+    height: 3px;
+    background: var(--neutral-100);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .article-progress-fill {
+    height: 100%;
+    background: var(--primary-600);
+    border-radius: 2px;
+  }
+  .lock-icon { font-size: 16px; margin-top: 8px; }
+
+  /* ══════════════════════════════
+     P2 · 阅读器
+  ══════════════════════════════ */
+  #page-reader {
+    background: var(--neutral-100);
+  }
+  .reader-top {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--neutral-100);
+  }
+  .reader-topbar {
+    display: flex;
+    align-items: center;
+    padding: 50px 16px 10px;
+    gap: 10px;
+  }
+  .reader-topic-tag {
+    flex: 1;
+    font-size: 13px;
+    color: var(--neutral-700);
+    font-weight: 500;
+    text-align: center;
+  }
+  .reader-more-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--neutral-200);
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .reader-progress-bar {
+    height: 3px;
+    background: var(--neutral-200);
+    position: relative;
+  }
+  .reader-progress-fill {
+    height: 100%;
+    background: var(--primary-700);
+    transition: width 0.3s;
+  }
+
+  .reader-body { padding: 20px 22px 220px; }
+  .reader-article-title {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--neutral-900);
+    line-height: 1.3;
+    margin-bottom: 20px;
+  }
+  .reader-para { margin-bottom: 18px; }
+
+  .sentence {
+    display: inline;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 1px 2px;
+    margin: 0 -2px;
+    transition: background 0.15s;
+    font-family: 'Lora', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.9;
+    color: var(--neutral-900);
+  }
+  .sentence.active { background: var(--primary-100); }
+
+  .word {
+    display: inline;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0 1px;
+    transition: all 0.15s;
+  }
+  .word.target {
+    background: rgba(244,162,97,0.3);
+    border-bottom: 2px solid var(--accent-400);
+    border-radius: 3px 3px 0 0;
+  }
+  .word.target:active, .word.target.clicked {
+    background: rgba(244,162,97,0.6);
+    transform: translateY(-1px);
+  }
+
+  /* 中文对照抽屉 */
+  .zh-drawer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid var(--neutral-200);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+    z-index: 30;
+    transition: height 0.3s cubic-bezier(0.32,0.72,0,1);
+    overflow: hidden;
+  }
+  .zh-drawer.collapsed { height: 44px; }
+  .zh-drawer.expanded { height: 220px; }
+  .zh-drawer-handle {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--neutral-100);
+  }
+  .zh-handle-title { font-size: 13px; font-weight: 600; color: var(--neutral-700); }
+  .zh-handle-arrow { font-size: 12px; color: var(--neutral-400); transition: transform 0.3s; }
+  .zh-drawer.expanded .zh-handle-arrow { transform: rotate(180deg); }
+  .zh-content {
+    padding: 12px 16px;
+    overflow-y: auto;
+    height: 176px;
+    font-size: 14px;
+    color: var(--neutral-700);
+    line-height: 1.8;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  .zh-sentence { display: inline; }
+  .zh-sentence.active { background: var(--primary-100); border-radius: 3px; padding: 1px 2px; }
+
+  /* ── 词典卡片（底部弹层） ── */
+  .dict-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    z-index: 40;
+    pointer-events: none;
+    transition: background 0.25s;
+  }
+  .dict-overlay.show {
+    background: rgba(0,0,0,0.4);
+    pointer-events: all;
+  }
+  .dict-card {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-radius: 24px 24px 0 0;
+    padding: 0 20px 40px;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+    z-index: 41;
+    max-height: 75vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .dict-card::-webkit-scrollbar { display: none; }
+  .dict-card.show { transform: translateY(0); }
+  .dict-drag-bar {
+    width: 40px;
+    height: 4px;
+    background: var(--neutral-200);
+    border-radius: 2px;
+    margin: 12px auto 16px;
+  }
+  .dict-word-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .dict-word {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--neutral-900);
+  }
+  .dict-phonetic {
+    font-size: 14px;
+    color: var(--neutral-400);
+    margin-top: 2px;
+    font-family: 'Courier New', monospace;
+  }
+  .dict-sound-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary-50);
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .dict-sound-btn:active { transform: scale(0.9); background: var(--primary-100); }
+  .dict-divider { height: 1px; background: var(--neutral-100); margin: 12px 0; }
+  .dict-def { margin-bottom: 6px; display: flex; gap: 8px; align-items: baseline; }
+  .dict-pos { font-size: 12px; color: var(--primary-700); font-weight: 600; min-width: 24px; }
+  .dict-meaning { font-size: 15px; color: var(--neutral-900); }
+  .dict-etymology {
+    background: var(--neutral-50);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    margin: 10px 0;
+    font-size: 13px;
+    color: var(--neutral-700);
+    line-height: 1.6;
+  }
+  .dict-etymology-label { font-size: 11px; color: var(--neutral-400); font-weight: 600; letter-spacing: 0.5px; margin-bottom: 4px; text-transform: uppercase; }
+  .dict-example { margin-bottom: 10px; }
+  .dict-example-en { font-family: 'Lora', serif; font-style: italic; font-size: 14px; color: var(--neutral-700); line-height: 1.6; }
+  .dict-example-zh { font-size: 13px; color: var(--neutral-400); margin-top: 2px; line-height: 1.5; }
+  .dict-add-btn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .dict-add-btn.default { background: var(--primary-800); color: #fff; }
+  .dict-add-btn.added { background: var(--primary-50); color: var(--primary-800); }
+  .dict-add-btn:active { transform: scale(0.97); }
+
+  /* 完成卡片弹层 */
+  .complete-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 50;
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .complete-overlay.show { opacity: 1; pointer-events: all; }
+  .complete-card {
+    width: 100%;
+    background: #fff;
+    border-radius: 24px 24px 0 0;
+    padding: 28px 24px 44px;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+  }
+  .complete-overlay.show .complete-card { transform: translateY(0); }
+  .complete-emoji { font-size: 48px; text-align: center; margin-bottom: 12px; }
+  .complete-title { font-size: 20px; font-weight: 700; color: var(--neutral-900); text-align: center; margin-bottom: 4px; }
+  .complete-sub { font-size: 14px; color: var(--neutral-400); text-align: center; margin-bottom: 20px; }
+  .complete-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    justify-content: center;
+  }
+  .complete-word-tag {
+    background: var(--accent-200);
+    color: var(--neutral-800);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .complete-streak {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--neutral-700);
+    margin-bottom: 20px;
+  }
+  .complete-btns { display: flex; flex-direction: column; gap: 10px; }
+
+  /* ══════════════════════════════
+     P3 · 词库中心
+  ══════════════════════════════ */
+  #page-library .lib-hero {
+    background: var(--primary-800);
+    padding: 50px 20px 24px;
+  }
+  #page-library .lib-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  #page-library .lib-sub { font-size: 13px; color: rgba(255,255,255,0.65); }
+
+  .lib-section { padding: 20px 20px 0; }
+  .lib-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--neutral-400);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .lib-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .lib-card {
+    background: #fff;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--neutral-200);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lib-card:active { transform: scale(0.98); }
+  .lib-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .lib-card-icon.green { background: var(--primary-100); }
+  .lib-card-icon.blue { background: #E8F4FD; }
+  .lib-card-icon.orange { background: #FEF3E8; }
+  .lib-card-icon.purple { background: #F3E8FE; }
+  .lib-card-info { flex: 1; }
+  .lib-card-name { font-size: 15px; font-weight: 600; color: var(--neutral-900); margin-bottom: 3px; }
+  .lib-card-meta { font-size: 12px; color: var(--neutral-400); }
+  .lib-card-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .lib-card-badge.official { background: var(--primary-100); color: var(--primary-700); }
+  .lib-card-badge.custom { background: var(--accent-200); color: #9B4F0A; }
+  .lib-card-badge.generating { background: #FFF3CD; color: #856404; }
+
+  .lib-add-btn {
+    background: var(--neutral-50);
+    border: 1.5px dashed var(--neutral-200);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--primary-700);
+    transition: all 0.2s;
+    width: 100%;
+    margin-bottom: 100px;
+  }
+  .lib-add-btn:active { background: var(--primary-50); }
+
+  /* ══════════════════════════════
+     P4 · 新建词库
+  ══════════════════════════════ */
+  #page-new-lib { background: var(--neutral-50); }
+  #page-new-lib .form-body { padding: 8px 20px 120px; }
+  .form-group { margin-bottom: 20px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--neutral-700); margin-bottom: 8px; display: block; }
+  .form-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--neutral-200);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--neutral-900);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--primary-600); }
+  .form-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--neutral-200);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    color: var(--neutral-900);
+    background: #fff;
+    outline: none;
+    resize: none;
+    transition: border-color 0.2s;
+    line-height: 1.7;
+    height: 180px;
+  }
+  .form-textarea:focus { border-color: var(--primary-600); }
+  .form-hint { font-size: 12px; color: var(--neutral-400); margin-top: 6px; }
+  .form-count { font-size: 12px; color: var(--primary-700); font-weight: 600; margin-top: 6px; }
+
+  .upload-area {
+    border: 2px dashed var(--neutral-200);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+    background: #fff;
+  }
+  .upload-area:active { border-color: var(--primary-600); background: var(--primary-50); }
+  .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-text { font-size: 13px; color: var(--neutral-400); }
+  .upload-link { color: var(--primary-700); text-decoration: underline; }
+
+  /* 模型配置提示 */
+  .model-tip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .model-tip.warning { background: #FFF3CD; color: #856404; border: 1px solid #FFEAA7; }
+  .model-tip.success { background: var(--primary-50); color: var(--primary-800); border: 1px solid var(--primary-100); }
+
+  /* 固定底部按钮区 */
+  .fixed-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(250,250,248,0.96);
+    backdrop-filter: blur(12px);
+    padding: 12px 20px 32px;
+    border-top: 1px solid var(--neutral-200);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 20;
+  }
+
+  /* ══════════════════════════════
+     P5 · 模型配置
+  ══════════════════════════════ */
+  #page-model { background: var(--neutral-50); }
+  #page-model .form-body { padding: 8px 20px 120px; }
+
+  .preset-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .preset-btn {
+    padding: 7px 14px;
+    border: 1.5px solid var(--neutral-200);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: #fff;
+    font-family: inherit;
+    transition: all 0.15s;
+    color: var(--neutral-700);
+  }
+  .preset-btn.active, .preset-btn:active { border-color: var(--primary-700); background: var(--primary-50); color: var(--primary-800); }
+
+  .verify-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .verify-result.show { opacity: 1; }
+  .verify-result.success { background: var(--primary-50); color: var(--primary-800); border: 1px solid var(--primary-100); }
+  .verify-result.error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+
+  /* ══════════════════════════════
+     P6 · 生成进度
+  ══════════════════════════════ */
+  #page-generating { background: var(--neutral-50); }
+  .gen-hero {
+    background: linear-gradient(160deg, var(--primary-800), var(--primary-700));
+    padding: 60px 24px 40px;
+    text-align: center;
+    color: #fff;
+  }
+  .gen-spinner {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .gen-title { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 8px; }
+  .gen-sub { font-size: 14px; opacity: 0.75; }
+
+  .gen-progress-section { padding: 24px 20px; }
+  .gen-progress-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .gen-progress-label { font-size: 14px; font-weight: 600; color: var(--neutral-700); }
+  .gen-progress-num { font-size: 20px; font-weight: 700; color: var(--primary-800); }
+  .gen-progress-bar {
+    height: 10px;
+    background: var(--neutral-200);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .gen-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-600), var(--primary-700));
+    border-radius: 5px;
+    transition: width 0.8s ease;
+    width: 0%;
+  }
+  .gen-progress-detail { font-size: 13px; color: var(--neutral-400); }
+
+  .gen-article-list { padding: 0 20px 100px; display: flex; flex-direction: column; gap: 8px; }
+  .gen-article-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #fff;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--neutral-200);
+    font-size: 14px;
+    transition: all 0.4s;
+  }
+  .gen-article-item.done { border-color: var(--primary-100); background: var(--primary-50); }
+  .gen-status-icon { font-size: 18px; flex-shrink: 0; }
+  .gen-article-name { flex: 1; color: var(--neutral-700); font-weight: 500; }
+  .gen-article-item.done .gen-article-name { color: var(--primary-800); }
+  .gen-article-time { font-size: 12px; color: var(--neutral-400); }
+
+  /* ══════════════════════════════
+     付费引导弹层
+  ══════════════════════════════ */
+  .paywall-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 60;
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .paywall-overlay.show { opacity: 1; pointer-events: all; }
+  .paywall-card {
+    width: 100%;
+    background: #fff;
+    border-radius: 24px 24px 0 0;
+    padding: 24px 24px 44px;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+  }
+  .paywall-overlay.show .paywall-card { transform: translateY(0); }
+  .paywall-close { text-align: right; font-size: 22px; cursor: pointer; color: var(--neutral-400); margin-bottom: 4px; }
+  .paywall-icon { font-size: 40px; text-align: center; margin-bottom: 10px; }
+  .paywall-title { font-size: 20px; font-weight: 700; color: var(--neutral-900); text-align: center; margin-bottom: 6px; }
+  .paywall-sub { font-size: 14px; color: var(--neutral-400); text-align: center; margin-bottom: 24px; line-height: 1.6; }
+  .paywall-plans { display: flex; gap: 10px; margin-bottom: 20px; }
+  .plan-card {
+    flex: 1;
+    border: 2px solid var(--neutral-200);
+    border-radius: var(--radius-lg);
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .plan-card.featured { border-color: var(--primary-700); background: var(--primary-50); }
+  .plan-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-700);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .plan-name { font-size: 13px; color: var(--neutral-500); margin-bottom: 6px; }
+  .plan-price { font-size: 22px; font-weight: 700; color: var(--neutral-900); }
+  .plan-period { font-size: 11px; color: var(--neutral-400); }
+
+  /* 工具提示标签（原型说明用） */
+  .proto-label {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .proto-label.show { opacity: 1; }
+
+  /* ══════════════════════════════
+     导航按钮（原型切换）
+  ══════════════════════════════ */
+  .nav-bar-device {
+    display: flex;
+    gap: 0;
+  }
+
+  /* 生词本页 */
+  #page-wordbook .wb-hero {
+    background: var(--primary-800);
+    padding: 50px 20px 20px;
+    color: #fff;
+  }
+  #page-wordbook .wb-title { font-family: 'DM Serif Display', serif; font-size: 24px; margin-bottom: 4px; }
+  #page-wordbook .wb-sub { font-size: 13px; opacity: 0.65; }
+  .wb-list { padding: 16px 20px 100px; display: flex; flex-direction: column; gap: 10px; }
+  .wb-item {
+    background: #fff;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--neutral-200);
+    padding: 14px 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .wb-item:active { transform: scale(0.98); }
+  .wb-word { font-family: 'Lora', serif; font-size: 18px; font-weight: 700; color: var(--neutral-900); }
+  .wb-phonetic { font-size: 12px; color: var(--neutral-400); font-family: monospace; margin-top: 1px; }
+  .wb-def { font-size: 13px; color: var(--neutral-700); margin-top: 5px; }
+  .wb-source { font-size: 11px; color: var(--primary-600); margin-top: 4px; font-weight: 500; }
+  .wb-star { font-size: 22px; color: var(--accent-400); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ 设备 ═══════════════════ -->
+<div class="device">
+  <div class="device-notch"></div>
+  <div class="device-screen" id="screen">
+
+    <!-- P1 · 文章列表（首页）-->
+    <div class="page active" id="page-home">
+      <div class="hero-bar" style="padding-top:50px">
+        <div class="hero-greeting">今天，继续学习</div>
+        <div class="hero-title">大学英语四级<br>精读课程</div>
+        <div class="progress-ring-wrap">
+          <svg class="ring-svg" width="56" height="56" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="5"/>
+            <circle cx="28" cy="28" r="22" fill="none" stroke="#fff" stroke-width="5"
+              stroke-dasharray="138.2" stroke-dashoffset="103.65"
+              stroke-linecap="round" transform="rotate(-90 28 28)"/>
+            <text x="28" y="33" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">25%</text>
+          </svg>
+          <div>
+            <div class="ring-info-label">课程进度</div>
+            <div class="ring-info-value">10 <span style="font-size:14px;font-weight:400;opacity:0.7">/ 40 篇</span></div>
+            <div class="ring-info-sub">累计接触 943 个目标词</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-scroll">
+        <div class="topic-tag active">全部</div>
+        <div class="topic-tag">校园生活</div>
+        <div class="topic-tag">职场经济</div>
+        <div class="topic-tag">科技创新</div>
+        <div class="topic-tag">文化旅游</div>
+        <div class="topic-tag">健康生活</div>
+      </div>
+
+      <div class="article-list">
+        <!-- 已读 -->
+        <div class="article-card" onclick="goTo('page-reader')">
+          <div class="article-num done">✓</div>
+          <div class="article-info">
+            <div class="article-topic">校园生活</div>
+            <div class="article-title">The Research Proposal</div>
+            <div class="article-meta"><span>100词</span><span>·</span><span>约8分钟</span><span>·</span><span style="color:var(--primary-600);font-weight:500">已完成</span></div>
+          </div>
+        </div>
+        <!-- 进行中 -->
+        <div class="article-card" onclick="goTo('page-reader')">
+          <div class="article-num reading">02</div>
+          <div class="article-info">
+            <div class="article-topic">个人成长</div>
+            <div class="article-title">The Career Decision</div>
+            <div class="article-meta"><span>98词</span><span>·</span><span>约7分钟</span></div>
+            <div class="article-progress-bar"><div class="article-progress-fill" style="width:55%"></div></div>
+          </div>
+        </div>
+        <!-- 未读 -->
+        <div class="article-card" onclick="goTo('page-reader')">
+          <div class="article-num unread">03</div>
+          <div class="article-info">
+            <div class="article-topic">文化旅游</div>
+            <div class="article-title">The Journey to Bali</div>
+            <div class="article-meta"><span>102词</span><span>·</span><span>约8分钟</span></div>
+          </div>
+        </div>
+        <div class="article-card" onclick="goTo('page-reader')">
+          <div class="article-num unread">04</div>
+          <div class="article-info">
+            <div class="article-topic">职场经济</div>
+            <div class="article-title">The Startup Dream</div>
+            <div class="article-meta"><span>97词</span><span>·</span><span>约7分钟</span></div>
+          </div>
+        </div>
+        <div class="article-card" onclick="goTo('page-reader')">
+          <div class="article-num unread">05</div>
+          <div class="article-info">
+            <div class="article-topic">健康生活</div>
+            <div class="article-title">The Healing Process</div>
+            <div class="article-meta"><span>103词</span><span>·</span><span>约8分钟</span></div>
+          </div>
+        </div>
+        <!-- 锁定 -->
+        <div class="article-card locked" onclick="showPaywall()">
+          <div class="article-num locked">🔒</div>
+          <div class="article-info">
+            <div class="article-topic">科技创新</div>
+            <div class="article-title">The AI Revolution</div>
+            <div class="article-meta"><span>99词</span><span>·</span><span>需解锁</span></div>
+          </div>
+        </div>
+        <div class="article-card locked" onclick="showPaywall()">
+          <div class="article-num locked">🔒</div>
+          <div class="article-info">
+            <div class="article-topic">社会时事</div>
+            <div class="article-title">The Urban Migration</div>
+            <div class="article-meta"><span>101词</span><span>·</span><span>需解锁</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-nav" style="position:absolute">
+        <div class="nav-item active" onclick="switchNav('page-home',this)"><div class="nav-icon">📖</div><div class="nav-label">课程</div></div>
+        <div class="nav-item" onclick="switchNav('page-library',this)"><div class="nav-icon">📚</div><div class="nav-label">词库</div></div>
+        <div class="nav-item" onclick="switchNav('page-wordbook',this)"><div class="nav-icon">⭐</div><div class="nav-label">生词本</div></div>
+        <div class="nav-item" onclick="switchNav('page-home',this)"><div class="nav-icon">📊</div><div class="nav-label">统计</div></div>
+        <div class="nav-item" onclick="switchNav('page-model',this)"><div class="nav-icon">⚙️</div><div class="nav-label">设置</div></div>
+      </div>
+    </div>
+
+    <!-- P2 · 阅读器 -->
+    <div class="page" id="page-reader">
+      <div class="reader-top">
+        <div class="reader-topbar">
+          <button class="back-btn" onclick="goTo('page-home')">←</button>
+          <div class="reader-topic-tag">校园生活 · 第 1 篇</div>
+          <button class="reader-more-btn">⋯</button>
+        </div>
+        <div class="reader-progress-bar">
+          <div class="reader-progress-fill" id="readerProgress" style="width:35%"></div>
+        </div>
+      </div>
+
+      <div class="reader-body">
+        <div class="reader-article-title">The Research Proposal</div>
+
+        <div class="reader-para">
+          <span class="sentence" id="s1-1" onclick="activateSentence('s1-1')">
+            Sarah <span class="word target" onclick="openDict(event,'stared')">stared</span> at her
+            <span class="word target" onclick="openDict(event,'blank')">blank</span>
+            computer screen, wondering how to begin her
+            <span class="word target" onclick="openDict(event,'research')">research</span>
+            <span class="word target" onclick="openDict(event,'proposal')">proposal</span>.
+          </span>
+          <span class="sentence" id="s1-2" onclick="activateSentence('s1-2')">
+            The <span class="word target" onclick="openDict(event,'deadline')">deadline</span>
+            was approaching, and she felt a growing sense of
+            <span class="word target" onclick="openDict(event,'anxiety')">anxiety</span>.
+          </span>
+        </div>
+
+        <div class="reader-para">
+          <span class="sentence" id="s2-1" onclick="activateSentence('s2-1')">
+            Her <span class="word target" onclick="openDict(event,'academic')">academic</span>
+            <span class="word target" onclick="openDict(event,'advisor')">advisor</span>
+            had been very <span class="word target" onclick="openDict(event,'patient')">patient</span>,
+            offering <span class="word target" onclick="openDict(event,'guidance')">guidance</span>
+            throughout the <span class="word target" onclick="openDict(event,'semester')">semester</span>.
+          </span>
+          <span class="sentence" id="s2-2" onclick="activateSentence('s2-2')">
+            But Sarah knew she needed to <span class="word target" onclick="openDict(event,'demonstrate')">demonstrate</span>
+            her ability to work <span class="word target" onclick="openDict(event,'independently')">independently</span>.
+          </span>
+        </div>
+
+        <div class="reader-para">
+          <span class="sentence" id="s3-1" onclick="activateSentence('s3-1')">
+            She opened her notebook and began to
+            <span class="word target" onclick="openDict(event,'analyze')">analyze</span>
+            the data she had <span class="word target" onclick="openDict(event,'collected')">collected</span>
+            over the past three months.
+          </span>
+          <span class="sentence" id="s3-2" onclick="activateSentence('s3-2')">
+            The <span class="word target" onclick="openDict(event,'evidence')">evidence</span>
+            was <span class="word target" onclick="openDict(event,'sufficient')">sufficient</span>,
+            but organizing it into a
+            <span class="word target" onclick="openDict(event,'coherent')">coherent</span>
+            <span class="word target" onclick="openDict(event,'argument')">argument</span>
+            was the real <span class="word target" onclick="openDict(event,'challenge')">challenge</span>.
+          </span>
+        </div>
+
+        <div class="reader-para">
+          <span class="sentence" id="s4-1" onclick="activateSentence('s4-1')">
+            Two hours later, Sarah leaned back in her chair with a sense of
+            <span class="word target" onclick="openDict(event,'accomplishment')">accomplishment</span>.
+          </span>
+          <span class="sentence" id="s4-2" onclick="activateSentence('s4-2')">
+            The <span class="word target" onclick="openDict(event,'proposal')">proposal</span>
+            was finally taking shape — clear, well-structured, and
+            <span class="word target" onclick="openDict(event,'persuasive')">persuasive</span>.
+          </span>
+          <span class="sentence" id="s4-3" onclick="activateSentence('s4-3')" style="cursor:pointer" onclick="showComplete()">
+            She clicked <span style="font-style:italic">"submit"</span> and smiled.
+            <span style="font-size:13px;color:var(--primary-700);margin-left:4px;cursor:pointer" onclick="showComplete()">[读完→完成]</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 中文对照抽屉 -->
+      <div class="zh-drawer expanded" id="zhDrawer" style="position:absolute;bottom:0">
+        <div class="zh-drawer-handle" onclick="toggleZh()">
+          <span class="zh-handle-title">中文对照</span>
+          <span class="zh-handle-arrow">▼</span>
+        </div>
+        <div class="zh-content">
+          <span class="zh-sentence" id="zh-s1-1">Sarah 盯着空白的电脑屏幕，不知该如何开始她的研究计划书。</span>
+          <span class="zh-sentence" id="zh-s1-2">截止日期临近，她感到越来越焦虑。</span>
+          <span class="zh-sentence" id="zh-s2-1">她的学术导师一直很有耐心，整个学期都为她提供指导。</span>
+          <span class="zh-sentence" id="zh-s2-2">但 Sarah 知道，她需要展示出独立工作的能力。</span>
+          <span class="zh-sentence" id="zh-s3-1">她翻开笔记本，开始整理过去三个月收集到的数据。</span>
+          <span class="zh-sentence" id="zh-s3-2">证据已经足够充分，但将其组织成一个连贯的论点才是真正的挑战。</span>
+          <span class="zh-sentence" id="zh-s4-1">两小时后，Sarah 靠在椅背上，心中涌起一股成就感。</span>
+          <span class="zh-sentence" id="zh-s4-2">研究计划书终于成形——清晰、结构完整、有说服力。</span>
+          <span class="zh-sentence" id="zh-s4-3">她点击了「提交」，微笑着。</span>
+        </div>
+      </div>
+
+      <!-- 词典卡片 -->
+      <div class="dict-overlay" id="dictOverlay" onclick="closeDict()"></div>
+      <div class="dict-card" id="dictCard">
+        <div class="dict-drag-bar"></div>
+        <div class="dict-word-row">
+          <div>
+            <div class="dict-word" id="dictWord">blank</div>
+            <div class="dict-phonetic" id="dictPhonetic">/blæŋk/</div>
+          </div>
+          <button class="dict-sound-btn" onclick="playSound()">🔊</button>
+        </div>
+        <div id="dictDefs"></div>
+        <div class="dict-divider"></div>
+        <div class="dict-etymology" id="dictEtym"></div>
+        <div class="dict-divider"></div>
+        <div id="dictExamples"></div>
+        <button class="dict-add-btn default" id="dictAddBtn" onclick="toggleWordbook()">
+          <span>⭐</span> 加入生词本
+        </button>
+      </div>
+
+      <!-- 完成弹层 -->
+      <div class="complete-overlay" id="completeOverlay">
+        <div class="complete-card">
+          <div class="complete-emoji">🎉</div>
+          <div class="complete-title">第 1 篇完成！</div>
+          <div class="complete-sub">本篇接触了 100 个目标词</div>
+          <div class="complete-words">
+            <span class="complete-word-tag">blank</span>
+            <span class="complete-word-tag">research</span>
+            <span class="complete-word-tag">proposal</span>
+            <span class="complete-word-tag">academic</span>
+            <span class="complete-word-tag">analyze</span>
+            <span class="complete-word-tag">evidence</span>
+            <span class="complete-word-tag">coherent</span>
+            <span class="complete-word-tag">+93 个</span>
+          </div>
+          <div class="complete-streak">🔥 连续学习 <strong>4 天</strong></div>
+          <div class="complete-btns">
+            <button class="btn-primary" onclick="closeComplete();goTo('page-reader')">继续第 2 篇 →</button>
+            <button class="btn-outline" onclick="closeComplete()">返回课程列表</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- P3 · 词库中心 -->
+    <div class="page" id="page-library">
+      <div class="lib-hero">
+        <div class="lib-title">词库中心</div>
+        <div class="lib-sub">选择词库，AI 自动生成精读课程</div>
+      </div>
+
+      <div class="lib-section">
+        <div class="lib-section-title">内置词库</div>
+        <div class="lib-cards">
+          <div class="lib-card" onclick="goTo('page-home')">
+            <div class="lib-card-icon green">📗</div>
+            <div class="lib-card-info">
+              <div class="lib-card-name">大学英语四级</div>
+              <div class="lib-card-meta">4,000 词 · 40 篇 · 已生成</div>
+            </div>
+            <span class="lib-card-badge official">官方</span>
+          </div>
+          <div class="lib-card">
+            <div class="lib-card-icon blue">📘</div>
+            <div class="lib-card-info">
+              <div class="lib-card-name">大学英语六级</div>
+              <div class="lib-card-meta">6,000 词 · 60 篇 · 已生成</div>
+            </div>
+            <span class="lib-card-badge official">官方</span>
+          </div>
+          <div class="lib-card">
+            <div class="lib-card-icon orange">📙</div>
+            <div class="lib-card-info">
+              <div class="lib-card-name">高中英语新课标</div>
+              <div class="lib-card-meta">3,500 词 · 35 篇 · 已生成</div>
+            </div>
+            <span class="lib-card-badge official">官方</span>
+          </div>
+          <div class="lib-card">
+            <div class="lib-card-icon purple">📕</div>
+            <div class="lib-card-info">
+              <div class="lib-card-name">考研英语词汇</div>
+              <div class="lib-card-meta">5,500 词 · 55 篇 · 已生成</div>
+            </div>
+            <span class="lib-card-badge official">官方</span>
+          </div>
+        </div>
+
+        <div class="lib-section-title">我的词库</div>
+        <div class="lib-cards">
+          <div class="lib-card">
+            <div class="lib-card-icon" style="background:#FFF3CD;font-size:22px">✨</div>
+            <div class="lib-card-info">
+              <div class="lib-card-name">托福核心词汇</div>
+              <div class="lib-card-meta">320 词 · 正在生成第 3/4 篇</div>
+            </div>
+            <span class="lib-card-badge generating">生成中</span>
+          </div>
+        </div>
+
+        <button class="lib-add-btn" onclick="goTo('page-new-lib')">
+          ＋ 导入新词库
+        </button>
+      </div>
+
+      <div class="bottom-nav" style="position:absolute">
+        <div class="nav-item" onclick="switchNav('page-home',this)"><div class="nav-icon">📖</div><div class="nav-label">课程</div></div>
+        <div class="nav-item active" onclick="switchNav('page-library',this)"><div class="nav-icon">📚</div><div class="nav-label">词库</div></div>
+        <div class="nav-item" onclick="switchNav('page-wordbook',this)"><div class="nav-icon">⭐</div><div class="nav-label">生词本</div></div>
+        <div class="nav-item" onclick="switchNav('page-home',this)"><div class="nav-icon">📊</div><div class="nav-label">统计</div></div>
+        <div class="nav-item" onclick="switchNav('page-model',this)"><div class="nav-icon">⚙️</div><div class="nav-label">设置</div></div>
+      </div>
+    </div>
+
+    <!-- P4 · 新建词库 -->
+    <div class="page" id="page-new-lib">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="page-header">
+        <button class="back-btn" onclick="goTo('page-library')">←</button>
+        <div class="page-title">导入新词库</div>
+      </div>
+      <div class="form-body">
+        <div class="form-group">
+          <label class="form-label">词库名称</label>
+          <input class="form-input" placeholder="例：托福备考词汇" value="托福核心词汇">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">上传词汇文件</label>
+          <div class="upload-area" onclick="showProtoTip('支持 .txt / .csv 文件')">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">拖拽文件到此处，或 <span class="upload-link">点击上传</span><br>.txt / .csv 格式</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">粘贴词汇列表</label>
+          <textarea class="form-textarea" id="vocabInput" oninput="updateCount()" placeholder="每行一个单词：&#10;abandon&#10;absolute&#10;academic&#10;access&#10;accomplish&#10;account&#10;accurate&#10;achieve">abandon
+absolute
+academic
+access
+accomplish
+account
+accurate
+achieve
+acquire
+adapt
+adequate
+adjust
+admire
+advocate
+affect</textarea>
+          <div class="form-count" id="vocabCount">已识别 15 个词汇</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">AI 模型配置</label>
+          <div class="model-tip success" onclick="goTo('page-model')">
+            ✅ DeepSeek · 连接正常 &nbsp;→ 修改
+          </div>
+        </div>
+      </div>
+
+      <div class="fixed-bottom">
+        <button class="btn-primary" onclick="goTo('page-generating')">预览课程结构 →</button>
+      </div>
+    </div>
+
+    <!-- P5 · 模型配置 -->
+    <div class="page" id="page-model">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="page-header">
+        <button class="back-btn" onclick="goTo('page-library')">←</button>
+        <div class="page-title">AI 模型配置</div>
+      </div>
+      <div class="form-body">
+        <div class="form-group">
+          <label class="form-label">快速选择服务商</label>
+          <div class="preset-grid">
+            <button class="preset-btn" onclick="selectPreset(this,'https://api.openai.com/v1','gpt-4o-mini')">OpenAI</button>
+            <button class="preset-btn active" onclick="selectPreset(this,'https://api.deepseek.com/v1','deepseek-chat')">DeepSeek</button>
+            <button class="preset-btn" onclick="selectPreset(this,'https://dashscope.aliyuncs.com/compatible-mode/v1','qwen-plus')">DashScope</button>
+            <button class="preset-btn" onclick="selectPreset(this,'https://api.moonshot.cn/v1','moonshot-v1-8k')">月之暗面</button>
+            <button class="preset-btn" onclick="selectPreset(this,'http://localhost:11434/v1','llama3')">Ollama</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Base URL</label>
+          <input class="form-input" id="baseUrl" value="https://api.deepseek.com/v1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input class="form-input" type="password" id="apiKey" value="sk-xxxxxxxxxxxxxxxx" placeholder="sk-...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">模型名称</label>
+          <input class="form-input" id="modelName" value="deepseek-chat">
+        </div>
+
+        <div id="verifyResult" class="verify-result success show">
+          ✅ 连接成功，模型可用
+        </div>
+      </div>
+
+      <div class="fixed-bottom">
+        <button class="btn-primary" onclick="simulateVerify()">✦ 验证连接</button>
+      </div>
+
+      <div class="bottom-nav" style="position:absolute">
+        <div class="nav-item" onclick="switchNav('page-home',this)"><div class="nav-icon">📖</div><div class="nav-label">课程</div></div>
+        <div class="nav-item" onclick="switchNav('page-library',this)"><div class="nav-icon">📚</div><div class="nav-label">词库</div></div>
+        <div class="nav-item" onclick="switchNav('page-wordbook',this)"><div class="nav-icon">⭐</div><div class="nav-label">生词本</div></div>
+        <div class="nav-item" onclick="switchNav('page-home',this)"><div class="nav-icon">📊</div><div class="nav-label">统计</div></div>
+        <div class="nav-item active" onclick="switchNav('page-model',this)"><div class="nav-icon">⚙️</div><div class="nav-label">设置</div></div>
+      </div>
+    </div>
+
+    <!-- P6 · 生成进度 -->
+    <div class="page" id="page-generating">
+      <div class="gen-hero">
+        <div class="gen-spinner" id="genSpinner"></div>
+        <div class="gen-title">正在生成课程</div>
+        <div class="gen-sub">托福核心词汇 · 320 词 · 共 4 篇</div>
+      </div>
+
+      <div class="gen-progress-section">
+        <div class="gen-progress-header">
+          <div class="gen-progress-label">生成进度</div>
+          <div class="gen-progress-num" id="genNum">1 / 4 篇</div>
+        </div>
+        <div class="gen-progress-bar">
+          <div class="gen-progress-fill" id="genFill" style="width:25%"></div>
+        </div>
+        <div class="gen-progress-detail" id="genDetail">正在生成第 2 篇：职场与经济…</div>
+      </div>
+
+      <div class="gen-article-list" id="genList">
+        <div class="gen-article-item done">
+          <div class="gen-status-icon">✅</div>
+          <div class="gen-article-name">校园与学习生活</div>
+          <div class="gen-article-time">23s</div>
+        </div>
+        <div class="gen-article-item" id="genItem2">
+          <div class="gen-status-icon" id="genIcon2">⏳</div>
+          <div class="gen-article-name">职场与经济</div>
+          <div class="gen-article-time" id="genTime2">生成中…</div>
+        </div>
+        <div class="gen-article-item" id="genItem3">
+          <div class="gen-status-icon">⬜</div>
+          <div class="gen-article-name">科技与创新</div>
+          <div class="gen-article-time">等待中</div>
+        </div>
+        <div class="gen-article-item" id="genItem4">
+          <div class="gen-status-icon">⬜</div>
+          <div class="gen-article-name">综合复现篇</div>
+          <div class="gen-article-time">等待中</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- P7 · 生词本 -->
+    <div class="page" id="page-wordbook">
+      <div class="wb-hero">
+        <div class="wb-title">生词本</div>
+        <div class="wb-sub">共收藏 8 个词汇</div>
+      </div>
+      <div class="wb-list">
+        <div class="wb-item" onclick="openDictFromWb('blank','/blæŋk/','adj. 空白的；茫然的')">
+          <div style="flex:1">
+            <div class="wb-word">blank</div>
+            <div class="wb-phonetic">/blæŋk/</div>
+            <div class="wb-def">adj. 空白的；茫然的</div>
+            <div class="wb-source">来自：第1篇 · 校园生活</div>
+          </div>
+          <div class="wb-star">★</div>
+        </div>
+        <div class="wb-item" onclick="openDictFromWb('research','/rɪˈsɜːrtʃ/','n./v. 研究；调查')">
+          <div style="flex:1">
+            <div class="wb-word">research</div>
+            <div class="wb-phonetic">/rɪˈsɜːrtʃ/</div>
+            <div class="wb-def">n./v. 研究；调查</div>
+            <div class="wb-source">来自：第1篇 · 校园生活</div>
+          </div>
+          <div class="wb-star">★</div>
+        </div>
+        <div class="wb-item" onclick="openDictFromWb('adequate','/ˈædɪkwət/','adj. 足够的；适当的')">
+          <div style="flex:1">
+            <div class="wb-word">adequate</div>
+            <div class="wb-phonetic">/ˈædɪkwət/</div>
+            <div class="wb-def">adj. 足够的；适当的</div>
+            <div class="wb-source">来自：第1篇 · 校园生活</div>
+          </div>
+          <div class="wb-star">★</div>
+        </div>
+        <div class="wb-item" onclick="openDictFromWb('accomplish','/əˈkɒmplɪʃ/','v. 完成；实现')">
+          <div style="flex:1">
+            <div class="wb-word">accomplish</div>
+            <div class="wb-phonetic">/əˈkɒmplɪʃ/</div>
+            <div class="wb-def">v. 完成；实现</div>
+            <div class="wb-source">来自：第1篇 · 校园生活</div>
+          </div>
+          <div class="wb-star">★</div>
+        </div>
+      </div>
+
+      <div class="bottom-nav" style="position:absolute">
+        <div class="nav-item" onclick="switchNav('page-home',this)"><div class="nav-icon">📖</div><div class="nav-label">课程</div></div>
+        <div class="nav-item" onclick="switchNav('page-library',this)"><div class="nav-icon">📚</div><div class="nav-label">词库</div></div>
+        <div class="nav-item active" onclick="switchNav('page-wordbook',this)"><div class="nav-icon">⭐</div><div class="nav-label">生词本</div></div>
+        <div class="nav-item" onclick="switchNav('page-home',this)"><div class="nav-icon">📊</div><div class="nav-label">统计</div></div>
+        <div class="nav-item" onclick="switchNav('page-model',this)"><div class="nav-icon">⚙️</div><div class="nav-label">设置</div></div>
+      </div>
+    </div>
+
+    <!-- 付费引导弹层（全局） -->
+    <div class="paywall-overlay" id="paywallOverlay" onclick="closePaywall()">
+      <div class="paywall-card" onclick="event.stopPropagation()">
+        <div class="paywall-close" onclick="closePaywall()">×</div>
+        <div class="paywall-icon">🔓</div>
+        <div class="paywall-title">解锁全部 40 篇</div>
+        <div class="paywall-sub">已完成 5 篇免费内容<br>升级会员，继续你的学习之旅</div>
+        <div class="paywall-plans">
+          <div class="plan-card">
+            <div class="plan-name">月度</div>
+            <div class="plan-price">¥18</div>
+            <div class="plan-period">/月</div>
+          </div>
+          <div class="plan-card featured">
+            <div class="plan-badge">最划算</div>
+            <div class="plan-name">年度</div>
+            <div class="plan-price">¥98</div>
+            <div class="plan-period">/年 ≈¥8.2/月</div>
+          </div>
+          <div class="plan-card">
+            <div class="plan-name">终身</div>
+            <div class="plan-price">¥198</div>
+            <div class="plan-period">一次付清</div>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="closePaywall()">立即解锁年度会员</button>
+      </div>
+    </div>
+
+    <!-- 原型提示 -->
+    <div class="proto-label" id="protoLabel"></div>
+
+  </div><!-- /screen -->
+</div><!-- /device -->
+
+<script>
+// ── 词典数据 ──
+const dictData = {
+  blank: {
+    phonetic: '/blæŋk/',
+    defs: [{pos:'adj.',meaning:'空白的；茫然的'},{pos:'n.',meaning:'空白；空格'}],
+    etym: '源自古法语 blanc（白色），引申为「空白无物」',
+    examples: [
+      {en:'She drew a blank when asked about the incident.',zh:'被问及那件事时，她脑子一片空白。'},
+      {en:'Please fill in the blank with the correct word.',zh:'请在空格中填入正确的词。'}
+    ]
+  },
+  research: {
+    phonetic: '/rɪˈsɜːrtʃ/',
+    defs: [{pos:'n.',meaning:'研究；调查'},{pos:'v.',meaning:'调查研究'}],
+    etym: '来自法语 recherche，re-（再次）+ chercher（寻找）',
+    examples: [
+      {en:'She spent years doing research on climate change.',zh:'她花了数年时间研究气候变化。'},
+      {en:'The research team published their findings last month.',zh:'研究团队上个月发布了研究结果。'}
+    ]
+  },
+  proposal: {
+    phonetic: '/prəˈpoʊzəl/',
+    defs: [{pos:'n.',meaning:'提案；建议；求婚'}],
+    etym: 'propose（提议）+ -al（名词后缀）',
+    examples: [
+      {en:'The committee approved the research proposal.',zh:'委员会批准了该研究提案。'},
+      {en:'He made a marriage proposal at the restaurant.',zh:'他在餐厅向她求婚。'}
+    ]
+  },
+  academic: {
+    phonetic: '/ˌækəˈdemɪk/',
+    defs: [{pos:'adj.',meaning:'学术的；学业的'},{pos:'n.',meaning:'学者'}],
+    etym: '来自 Academy（柏拉图学院），源自希腊英雄 Akademos',
+    examples: [
+      {en:'She has an excellent academic record.',zh:'她有着出色的学业成绩。'},
+      {en:'The academic year begins in September.',zh:'学年从九月开始。'}
+    ]
+  },
+  deadline: {
+    phonetic: '/ˈdedlaɪn/',
+    defs: [{pos:'n.',meaning:'截止日期；最后期限'}],
+    etym: '原指监狱中不得越过的「死线」，后引申为时间限制',
+    examples: [
+      {en:'We must meet the deadline for the project.',zh:'我们必须赶上项目的截止日期。'},
+      {en:'The deadline is Friday at 5 PM.',zh:'截止时间是周五下午五点。'}
+    ]
+  },
+  analyze: {
+    phonetic: '/ˈænəlaɪz/',
+    defs: [{pos:'v.',meaning:'分析；解析'}],
+    etym: 'ana-（分开）+ lysis（分解），源自希腊语',
+    examples: [
+      {en:'Scientists analyzed the data carefully.',zh:'科学家仔细分析了数据。'},
+      {en:'We need to analyze the cause of the problem.',zh:'我们需要分析问题的原因。'}
+    ]
+  },
+  evidence: {
+    phonetic: '/ˈevɪdəns/',
+    defs: [{pos:'n.',meaning:'证据；迹象'},{pos:'v.',meaning:'证明；显示'}],
+    etym: 'e-（出）+ vid-（看见，拉丁语），即「看得见的东西」',
+    examples: [
+      {en:'There is strong evidence to support this theory.',zh:'有强有力的证据支持这一理论。'},
+      {en:'The police collected evidence at the crime scene.',zh:'警方在犯罪现场收集了证据。'}
+    ]
+  },
+  coherent: {
+    phonetic: '/koʊˈhɪərənt/',
+    defs: [{pos:'adj.',meaning:'连贯的；条理清晰的；一致的'}],
+    etym: 'co-（共同）+ haerere（粘住），即「粘合在一起」',
+    examples: [
+      {en:'Please give a coherent explanation of your plan.',zh:'请对你的计划给出一个条理清晰的解释。'},
+      {en:'His argument was not very coherent.',zh:'他的论点不太连贯。'}
+    ]
+  },
+  adequate: {
+    phonetic: '/ˈædɪkwət/',
+    defs: [{pos:'adj.',meaning:'足够的；适当的；勉强够用的'}],
+    etym: 'ad-（向）+ aequus（相等），即「达到标准的」',
+    examples: [
+      {en:'The salary is adequate for a single person.',zh:'这份薪水对单身人士来说够用了。'},
+      {en:'Make sure you get adequate sleep every night.',zh:'确保每晚睡眠充足。'}
+    ]
+  },
+  accomplish: {
+    phonetic: '/əˈkɒmplɪʃ/',
+    defs: [{pos:'v.',meaning:'完成；实现；达到'}],
+    etym: 'ac-（到达）+ complete（完成），强调最终达成',
+    examples: [
+      {en:'She accomplished her goal of running a marathon.',zh:'她实现了跑马拉松的目标。'},
+      {en:'What did you accomplish today?',zh:'你今天完成了什么？'}
+    ]
+  },
+};
+
+let currentWord = null;
+let wordbookWords = new Set(['blank','research']);
+let activeSentenceId = null;
+
+// ── 页面切换 ──
+function goTo(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  if (pageId === 'page-generating') startGenAnimation();
+}
+
+function switchNav(pageId, el) {
+  const screen = el.closest('.page');
+  screen.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  goTo(pageId);
+}
+
+// ── 句子交互 ──
+function activateSentence(id) {
+  if (activeSentenceId) {
+    const prev = document.getElementById(activeSentenceId);
+    if (prev) prev.classList.remove('active');
+    const prevZh = document.getElementById('zh-' + activeSentenceId);
+    if (prevZh) prevZh.classList.remove('active');
+  }
+  activeSentenceId = id;
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  const zhEl = document.getElementById('zh-' + id);
+  if (zhEl) zhEl.classList.add('active');
+
+  // 模拟进度推进
+  const sentences = ['s1-1','s1-2','s2-1','s2-2','s3-1','s3-2','s4-1','s4-2','s4-3'];
+  const idx = sentences.indexOf(id);
+  if (idx >= 0) {
+    const pct = Math.round(((idx + 1) / sentences.length) * 90);
+    document.getElementById('readerProgress').style.width = pct + '%';
+  }
+}
+
+// ── 词典 ──
+function openDict(event, word) {
+  event.stopPropagation();
+  currentWord = word;
+  const data = dictData[word] || {
+    phonetic: '/ˈwɜːrd/',
+    defs: [{pos:'v.',meaning:'（释义生成中）'}],
+    etym: '',
+    examples: [{en:'Example sentence.',zh:'示例句子。'}]
+  };
+
+  document.getElementById('dictWord').textContent = word;
+  document.getElementById('dictPhonetic').textContent = data.phonetic;
+
+  const defsEl = document.getElementById('dictDefs');
+  defsEl.innerHTML = data.defs.map(d =>
+    `<div class="dict-def"><span class="dict-pos">${d.pos}</span><span class="dict-meaning">${d.meaning}</span></div>`
+  ).join('');
+
+  const etymEl = document.getElementById('dictEtym');
+  if (data.etym) {
+    etymEl.innerHTML = `<div class="dict-etymology-label">词根词缀</div>${data.etym}`;
+    etymEl.style.display = '';
+  } else {
+    etymEl.style.display = 'none';
+  }
+
+  const exEl = document.getElementById('dictExamples');
+  exEl.innerHTML = data.examples.map(e =>
+    `<div class="dict-example"><div class="dict-example-en">${e.en}</div><div class="dict-example-zh">${e.zh}</div></div>`
+  ).join('');
+
+  const btn = document.getElementById('dictAddBtn');
+  if (wordbookWords.has(word)) {
+    btn.className = 'dict-add-btn added';
+    btn.innerHTML = '<span>✓</span> 已加入生词本';
+  } else {
+    btn.className = 'dict-add-btn default';
+    btn.innerHTML = '<span>⭐</span> 加入生词本';
+  }
+
+  document.getElementById('dictOverlay').classList.add('show');
+  document.getElementById('dictCard').classList.add('show');
+}
+
+function openDictFromWb(word, phonetic, def) {
+  // 从生词本页打开词典（跳到阅读器页的词典）
+  currentWord = word;
+  openDict({ stopPropagation: () => {} }, word);
+  // 确保词典卡片在当前页可见
+  document.getElementById('dictOverlay').style.position = 'fixed';
+  document.getElementById('dictCard').style.position = 'fixed';
+}
+
+function closeDict() {
+  document.getElementById('dictOverlay').classList.remove('show');
+  document.getElementById('dictCard').classList.remove('show');
+}
+
+function toggleWordbook() {
+  if (!currentWord) return;
+  const btn = document.getElementById('dictAddBtn');
+  if (wordbookWords.has(currentWord)) {
+    wordbookWords.delete(currentWord);
+    btn.className = 'dict-add-btn default';
+    btn.innerHTML = '<span>⭐</span> 加入生词本';
+  } else {
+    wordbookWords.add(currentWord);
+    btn.className = 'dict-add-btn added';
+    btn.innerHTML = '<span>✓</span> 已加入生词本';
+    showProtoTip('已加入生词本 ✓');
+  }
+}
+
+function playSound() {
+  if ('speechSynthesis' in window && currentWord) {
+    const u = new SpeechSynthesisUtterance(currentWord);
+    u.lang = 'en-US';
+    u.rate = 0.85;
+    window.speechSynthesis.speak(u);
+  }
+  showProtoTip('播放发音 🔊');
+}
+
+// ── 中文抽屉 ──
+function toggleZh() {
+  const d = document.getElementById('zhDrawer');
+  d.classList.toggle('collapsed');
+  d.classList.toggle('expanded');
+}
+
+// ── 完成弹层 ──
+function showComplete() {
+  document.getElementById('completeOverlay').classList.add('show');
+  document.getElementById('readerProgress').style.width = '100%';
+}
+function closeComplete() {
+  document.getElementById('completeOverlay').classList.remove('show');
+}
+
+// ── 付费墙 ──
+function showPaywall() {
+  document.getElementById('paywallOverlay').classList.add('show');
+}
+function closePaywall() {
+  document.getElementById('paywallOverlay').classList.remove('show');
+}
+
+// ── 模型验证模拟 ──
+function simulateVerify() {
+  const r = document.getElementById('verifyResult');
+  r.className = 'verify-result show';
+  r.style.background = '#FFF3CD';
+  r.style.color = '#856404';
+  r.style.borderColor = '#FFEAA7';
+  r.textContent = '⏳ 验证中…';
+  setTimeout(() => {
+    r.style.background = '';
+    r.style.color = '';
+    r.style.borderColor = '';
+    r.className = 'verify-result success show';
+    r.textContent = '✅ 连接成功，模型可用';
+    showProtoTip('模型验证通过！');
+  }, 1800);
+}
+
+// ── 预设服务商选择 ──
+function selectPreset(el, url, model) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('baseUrl').value = url;
+  document.getElementById('modelName').value = model;
+  const r = document.getElementById('verifyResult');
+  r.className = 'verify-result';
+  r.textContent = '';
+}
+
+// ── 词汇计数 ──
+function updateCount() {
+  const text = document.getElementById('vocabInput').value;
+  const words = text.split('\n').map(w => w.trim()).filter(w => w && /^[a-zA-Z]/.test(w));
+  document.getElementById('vocabCount').textContent = `已识别 ${words.length} 个词汇`;
+}
+
+// ── 生成动画 ──
+let genTimer = null;
+function startGenAnimation() {
+  let step = 1;
+  clearInterval(genTimer);
+  // 重置
+  document.getElementById('genFill').style.width = '25%';
+  document.getElementById('genNum').textContent = '1 / 4 篇';
+  document.getElementById('genDetail').textContent = '正在生成第 2 篇：职场与经济…';
+  document.getElementById('genItem2').classList.remove('done');
+  document.getElementById('genIcon2').textContent = '⏳';
+  document.getElementById('genTime2').textContent = '生成中…';
+  document.getElementById('genItem3').classList.remove('done');
+  document.getElementById('genItem4').classList.remove('done');
+  document.getElementById('genSpinner').style.display = '';
+
+  genTimer = setInterval(() => {
+    step++;
+    if (step === 2) {
+      document.getElementById('genFill').style.width = '50%';
+      document.getElementById('genNum').textContent = '2 / 4 篇';
+      document.getElementById('genItem2').classList.add('done');
+      document.getElementById('genIcon2').textContent = '✅';
+      document.getElementById('genTime2').textContent = '28s';
+      document.getElementById('genDetail').textContent = '正在生成第 3 篇：科技与创新…';
+    } else if (step === 3) {
+      document.getElementById('genFill').style.width = '75%';
+      document.getElementById('genNum').textContent = '3 / 4 篇';
+      document.getElementById('genItem3').classList.add('done');
+      document.getElementById('genItem3').querySelector('.gen-status-icon').textContent = '✅';
+      document.getElementById('genItem3').querySelector('.gen-article-time').textContent = '31s';
+      document.getElementById('genDetail').textContent = '正在生成第 4 篇：综合复现篇…';
+    } else if (step === 4) {
+      document.getElementById('genFill').style.width = '100%';
+      document.getElementById('genNum').textContent = '4 / 4 篇';
+      document.getElementById('genItem4').classList.add('done');
+      document.getElementById('genItem4').querySelector('.gen-status-icon').textContent = '✅';
+      document.getElementById('genItem4').querySelector('.gen-article-time').textContent = '26s';
+      document.getElementById('genDetail').textContent = '✅ 全部生成完成！';
+      document.getElementById('genSpinner').style.display = 'none';
+      clearInterval(genTimer);
+      setTimeout(() => {
+        showProtoTip('生成完成！跳转到课程…');
+        setTimeout(() => goTo('page-home'), 1200);
+      }, 800);
+    }
+  }, 2000);
+}
+
+// ── 原型提示 ──
+function showProtoTip(msg) {
+  const el = document.getElementById('protoLabel');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>
