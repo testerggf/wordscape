@@ -1,14 +1,22 @@
 "use client";
 
-import { ArrowLeft, BookMarked, BookOpen, CheckCircle, History, Languages, Volume2, X } from "lucide-react";
+import { ArrowLeft, BookMarked, BookOpen, CheckCircle, Gauge, History, Languages, Pause, Play, Volume2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { QuizDialog } from "@/components/reader/QuizDialog";
 import { getDictEntry, type Article, type Sentence } from "@/lib/seed-data";
 import { lemmaCandidates, resolveInSet, resolveWith } from "@/lib/lemma";
+import { loadLookupSet, recordLookup } from "@/lib/lookup-history";
 import { loadProgress, saveProgress, type ArticleProgress } from "@/lib/reading-progress";
+import {
+  DEFAULT_READER_SETTINGS,
+  TTS_RATES,
+  loadReaderSettings,
+  saveReaderSettings,
+  type TranslationMode,
+} from "@/lib/reader-settings";
 import { addWordbookEntry, isInWordbook, loadWordbook, removeWordbookEntry } from "@/lib/wordbook";
-import { WORDBOOK_EVENTS, useClientValue } from "@/lib/use-client-value";
+import { LOOKUP_EVENTS, READER_SETTINGS_EVENTS, WORDBOOK_EVENTS, useClientValue } from "@/lib/use-client-value";
 import { cn } from "@/lib/utils";
 
 interface ReaderViewProps {
@@ -26,20 +34,42 @@ type Token =
   | { type: "word"; value: string; key: string }
   | { type: "text"; value: string; key: string };
 
+const EMPTY_LOOKUPS = new Set<string>();
+
+const TRANSLATION_MODE_LABEL: Record<TranslationMode, string> = {
+  click: "点句对照",
+  always: "全文对照",
+  hidden: "隐藏中文",
+};
+
+const NEXT_TRANSLATION_MODE: Record<TranslationMode, TranslationMode> = {
+  click: "always",
+  always: "hidden",
+  hidden: "click",
+};
+
 export function ReaderView({ article, backHref }: ReaderViewProps) {
   const [activeSentenceId, setActiveSentenceId] = useState<string | null>(null);
+  const [focusSentenceId, setFocusSentenceId] = useState<string | null>(null);
   const [flashSentenceId, setFlashSentenceId] = useState<string | null>(null);
   const [dictContext, setDictContext] = useState<DictContext | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [quizOpen, setQuizOpen] = useState(false);
-  const [translationOpen, setTranslationOpen] = useState(true);
   const [resumeTarget, setResumeTarget] = useState<ArticleProgress | null>(null);
-  const wordbookCount = useClientValue(() => loadWordbook().length, 0, WORDBOOK_EVENTS);
+  const [continuousPlaying, setContinuousPlaying] = useState(false);
   const lastSaveAt = useRef(0);
+  // 任何手动操作都会推进代数，作废进行中的连读链
+  const speechGeneration = useRef(0);
+
+  const settings = useClientValue(loadReaderSettings, DEFAULT_READER_SETTINGS, READER_SETTINGS_EVENTS);
+  const lookupSet = useClientValue(loadLookupSet, EMPTY_LOOKUPS, LOOKUP_EVENTS);
+  const wordbookCount = useClientValue(() => loadWordbook().length, 0, WORDBOOK_EVENTS);
 
   const targetWords = useMemo(() => {
     return new Set(article.paragraphs.flatMap((p) => p.sentences.flatMap((s) => s.targetWords.map((w) => w.toLowerCase()))));
   }, [article]);
+
+  const flatSentences = useMemo(() => article.paragraphs.flatMap((p) => p.sentences), [article]);
 
   // 初始化：恢复进度 / 处理 ?sentence= 深链（放入 rAF 回调，等首帧渲染完成后执行）
   useEffect(() => {
@@ -66,6 +96,13 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
       if (flashTimer) clearTimeout(flashTimer);
     };
   }, [article.id]);
+
+  // 卸载时停掉朗读
+  useEffect(() => {
+    return () => {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    };
+  }, []);
 
   // 滚动：更新百分比 + 句子锚点；节流写入并带尾随保存，避免丢掉滚动结束时的位置
   useEffect(() => {
@@ -133,20 +170,90 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
     setScrollProgress(100);
   };
 
-  const speakSentence = (sentence: Sentence) => {
-    setActiveSentenceId(sentence.id);
+  const stopSpeech = () => {
+    speechGeneration.current += 1;
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    setActiveSentenceId(null);
+    setContinuousPlaying(false);
+  };
 
-    if (!("speechSynthesis" in window)) {
+  const speakFrom = (startIndex: number, continuous: boolean) => {
+    if (!("speechSynthesis" in window)) return;
+
+    speechGeneration.current += 1;
+    const generation = speechGeneration.current;
+    window.speechSynthesis.cancel();
+    setContinuousPlaying(continuous);
+
+    const speakAt = (index: number) => {
+      if (generation !== speechGeneration.current || index >= flatSentences.length) {
+        if (generation === speechGeneration.current) {
+          setActiveSentenceId(null);
+          setContinuousPlaying(false);
+        }
+        return;
+      }
+
+      const sentence = flatSentences[index];
+      setActiveSentenceId(sentence.id);
+      setFocusSentenceId(sentence.id);
+      if (continuous) scrollToSentence(sentence.id, "smooth");
+
+      const utterance = new SpeechSynthesisUtterance(sentence.en);
+      utterance.lang = "en-US";
+      utterance.rate = settings.ttsRate;
+      utterance.onend = () => {
+        if (generation !== speechGeneration.current) return;
+        if (continuous) {
+          speakAt(index + 1);
+        } else {
+          setActiveSentenceId(null);
+        }
+      };
+      utterance.onerror = () => {
+        if (generation !== speechGeneration.current) return;
+        setActiveSentenceId(null);
+        setContinuousPlaying(false);
+      };
+      window.speechSynthesis.speak(utterance);
+    };
+
+    speakAt(startIndex);
+  };
+
+  const handleSentenceClick = (sentence: Sentence) => {
+    setFocusSentenceId(sentence.id);
+
+    // 再次点击正在朗读的句子 = 停止
+    if (activeSentenceId === sentence.id) {
+      stopSpeech();
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(sentence.en);
-    utterance.lang = "en-US";
-    utterance.rate = 0.85;
-    utterance.onend = () => setActiveSentenceId(null);
-    utterance.onerror = () => setActiveSentenceId(null);
-    window.speechSynthesis.speak(utterance);
+    const index = flatSentences.findIndex((item) => item.id === sentence.id);
+    speakFrom(index === -1 ? 0 : index, false);
+  };
+
+  const toggleContinuous = () => {
+    if (continuousPlaying) {
+      stopSpeech();
+      return;
+    }
+
+    const anchor = findAnchorSentence();
+    const startIndex = anchor ? flatSentences.findIndex((item) => item.id === anchor) : 0;
+    speakFrom(Math.max(0, startIndex), true);
+  };
+
+  const cycleTtsRate = () => {
+    const currentIndex = TTS_RATES.indexOf(settings.ttsRate);
+    const next = TTS_RATES[(currentIndex + 1) % TTS_RATES.length];
+    saveReaderSettings({ ttsRate: next });
+  };
+
+  const openDict = (rawWord: string, sentence: Sentence, isTarget: boolean) => {
+    if (!isTarget) recordLookup(rawWord);
+    setDictContext({ rawWord, sentence });
   };
 
   const resumeReading = () => {
@@ -158,26 +265,38 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
     setResumeTarget(null);
   };
 
+  const translationMode = settings.translationMode;
+  const focusSentence = focusSentenceId ? flatSentences.find((item) => item.id === focusSentenceId) ?? null : null;
+
   return (
     <main className="min-h-screen bg-[var(--neutral-100)] text-[var(--neutral-900)]">
       <header className="sticky top-0 z-20 border-b border-[var(--neutral-200)] bg-[var(--neutral-100)]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3">
           <Link
             href={backHref}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--neutral-700)] shadow-sm"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[var(--neutral-700)] shadow-sm"
             aria-label="返回课程"
           >
             <ArrowLeft size={19} />
           </Link>
           <div className="min-w-0 flex-1 text-center">
-            <div className="text-sm font-medium text-[var(--neutral-700)]">{article.topic} · 第 {article.index} 篇</div>
+            <div className="truncate text-sm font-medium text-[var(--neutral-700)]">{article.topic} · 第 {article.index} 篇</div>
             <div className="mt-2 h-1 overflow-hidden rounded-full bg-[var(--neutral-200)]">
               <div className="h-full rounded-full bg-[var(--primary-700)]" style={{ width: `${scrollProgress}%` }} />
             </div>
           </div>
+          <button
+            className="flex h-10 shrink-0 items-center gap-1 rounded-full bg-white px-2.5 font-mono text-xs font-semibold text-[var(--neutral-700)] shadow-sm"
+            onClick={cycleTtsRate}
+            type="button"
+            aria-label="切换朗读语速"
+          >
+            <Gauge size={14} />
+            {settings.ttsRate}x
+          </button>
           <Link
             href="/wordbook"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--neutral-700)] shadow-sm"
+            className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[var(--neutral-700)] shadow-sm"
             aria-label="生词本"
           >
             <BookMarked size={18} />
@@ -188,14 +307,14 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
             )}
           </Link>
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--neutral-700)] shadow-sm"
-            aria-label="朗读首句"
-            onClick={() => {
-              const firstSentence = article.paragraphs[0]?.sentences[0];
-              if (firstSentence) speakSentence(firstSentence);
-            }}
+            className={cn(
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-sm",
+              continuousPlaying ? "bg-[var(--primary-800)] text-white" : "bg-white text-[var(--neutral-700)]",
+            )}
+            aria-label={continuousPlaying ? "停止连续朗读" : "从当前位置连续朗读"}
+            onClick={toggleContinuous}
           >
-            <Volume2 size={18} />
+            {continuousPlaying ? <Pause size={18} /> : <Play size={18} />}
           </button>
         </div>
       </header>
@@ -225,8 +344,8 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
         </div>
       )}
 
-      <div className={cn("mx-auto grid max-w-6xl gap-0", translationOpen ? "lg:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]" : "lg:grid-cols-1")}>
-        <article className={cn("px-5 pt-8 lg:px-10", translationOpen ? "pb-52 lg:pb-16" : "pb-16")}>
+      <div className={cn("mx-auto grid max-w-6xl gap-0", translationMode === "always" ? "lg:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]" : "lg:grid-cols-1")}>
+        <article className={cn("px-5 pt-8 lg:px-10", translationMode === "always" ? "pb-52 lg:pb-16" : "pb-32")}>
           <div className="mx-auto max-w-3xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--primary-800)]">
               <BookOpen size={14} />
@@ -237,16 +356,16 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
               <button
                 className={cn(
                   "mt-1 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition",
-                  translationOpen
+                  translationMode === "always"
                     ? "border-[var(--primary-800)] bg-[var(--primary-800)] text-white"
                     : "border-[var(--neutral-200)] bg-white text-[var(--primary-800)] hover:border-[var(--primary-700)]",
                 )}
-                onClick={() => setTranslationOpen((open) => !open)}
+                onClick={() => saveReaderSettings({ translationMode: NEXT_TRANSLATION_MODE[translationMode] })}
                 type="button"
-                aria-pressed={translationOpen}
+                aria-label="切换中文对照方式"
               >
                 <Languages size={15} />
-                中英对照
+                {TRANSLATION_MODE_LABEL[translationMode]}
               </button>
             </div>
 
@@ -258,10 +377,11 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
                       key={sentence.id}
                       sentence={sentence}
                       targetWords={targetWords}
+                      lookupSet={lookupSet}
                       active={activeSentenceId === sentence.id}
                       flashed={flashSentenceId === sentence.id}
-                      onActivate={() => speakSentence(sentence)}
-                      onOpenDict={(rawWord) => setDictContext({ rawWord, sentence })}
+                      onActivate={() => handleSentenceClick(sentence)}
+                      onOpenDict={(word, isTarget) => openDict(word, sentence, isTarget)}
                     />
                   ))}
                 </p>
@@ -279,7 +399,7 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
           </div>
         </article>
 
-        {translationOpen && (
+        {translationMode === "always" && (
           <aside className="fixed inset-x-0 bottom-0 z-10 max-h-[34vh] overflow-y-auto rounded-t-2xl border-t border-[var(--neutral-200)] bg-white px-5 py-4 shadow-2xl lg:sticky lg:top-[65px] lg:h-[calc(100vh-65px)] lg:max-h-none lg:rounded-none lg:border-l lg:border-t-0 lg:px-8 lg:py-8 lg:shadow-none">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-[var(--neutral-700)]">中文对照</h2>
@@ -302,6 +422,22 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
           </aside>
         )}
       </div>
+
+      {translationMode === "click" && focusSentence && (
+        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--neutral-200)] bg-white/97 px-5 py-4 shadow-2xl backdrop-blur">
+          <div className="mx-auto flex max-w-3xl items-start gap-3">
+            <p className="min-w-0 flex-1 text-sm leading-7 text-[var(--neutral-700)]">{focusSentence.zh}</p>
+            <button
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--neutral-100)] text-[var(--neutral-400)]"
+              onClick={() => setFocusSentenceId(null)}
+              aria-label="关闭当前句对照"
+              type="button"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <DictCard context={dictContext} article={article} onClose={() => setDictContext(null)} />
       {quizOpen && (
@@ -332,6 +468,7 @@ function findAnchorSentence(): string | null {
 function SentenceBlock({
   sentence,
   targetWords,
+  lookupSet,
   active,
   flashed,
   onActivate,
@@ -339,10 +476,11 @@ function SentenceBlock({
 }: {
   sentence: Sentence;
   targetWords: Set<string>;
+  lookupSet: Set<string>;
   active: boolean;
   flashed: boolean;
   onActivate: () => void;
-  onOpenDict: (word: string) => void;
+  onOpenDict: (word: string, isTarget: boolean) => void;
 }) {
   return (
     <span
@@ -361,6 +499,7 @@ function SentenceBlock({
         }
 
         const matchedTarget = resolveInSet(token.value, targetWords);
+        const lookedUp = !matchedTarget && resolveInSet(token.value, lookupSet) !== null;
 
         return (
           <span
@@ -369,16 +508,18 @@ function SentenceBlock({
               "rounded-sm px-0.5 transition",
               matchedTarget
                 ? "cursor-pointer border-b-2 border-[var(--accent-400)] bg-[rgba(244,162,97,0.32)] hover:bg-[rgba(244,162,97,0.58)]"
-                : "cursor-text hover:bg-white/70",
+                : lookedUp
+                  ? "cursor-text border-b border-dashed border-[var(--neutral-400)] hover:bg-white/70"
+                  : "cursor-text hover:bg-white/70",
             )}
             onClick={(event) => {
               if (!matchedTarget) return;
               event.stopPropagation();
-              onOpenDict(token.value);
+              onOpenDict(token.value, true);
             }}
             onDoubleClick={(event) => {
               event.stopPropagation();
-              onOpenDict(token.value);
+              onOpenDict(token.value, Boolean(matchedTarget));
             }}
           >
             {token.value}
@@ -393,6 +534,7 @@ const EMPTY_WORDBOOK: never[] = [];
 
 function DictCard({ context, article, onClose }: { context: DictContext | null; article: Article; onClose: () => void }) {
   const wordbook = useClientValue(loadWordbook, EMPTY_WORDBOOK, WORDBOOK_EVENTS);
+  const rateSettings = useClientValue(loadReaderSettings, DEFAULT_READER_SETTINGS, READER_SETTINGS_EVENTS);
 
   if (!context) return null;
 
@@ -411,7 +553,7 @@ function DictCard({ context, article, onClose }: { context: DictContext | null; 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(entry?.word ?? rawWord);
     utterance.lang = "en-US";
-    utterance.rate = 0.82;
+    utterance.rate = Math.min(rateSettings.ttsRate, 0.85);
     window.speechSynthesis.speak(utterance);
   };
 

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 
 export const WORDBOOK_EVENTS = ["wordscape:wordbook-changed"];
 export const GENERATED_COURSE_EVENTS = ["wordscape:generated-courses-changed"];
+export const READER_SETTINGS_EVENTS = ["wordscape:reader-settings-changed"];
+export const LOOKUP_EVENTS = ["wordscape:lookups-changed"];
 export const NO_EVENTS: string[] = [];
 
 /**
