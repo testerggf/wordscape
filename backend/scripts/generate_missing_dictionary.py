@@ -62,7 +62,10 @@ def cooldown_seconds(exc: Exception, attempt: int) -> float:
 async def main() -> None:
     args = parse_args()
     audit = build_audit()
-    requested = [item["word"] for item in audit["actionable_missing_words"]]
+    requested = list(dict.fromkeys(
+        [item["word"] for item in audit["actionable_missing_words"]]
+        + audit["missing_target_words"]
+    ))
     entries = load_checkpoint()
     pending = [word for word in requested if word not in entries]
     print(

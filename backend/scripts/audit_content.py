@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from collections import Counter
@@ -188,6 +189,10 @@ def build_audit() -> dict:
 
     total_occurrences = sum(token_counts.values())
     missing_occurrences = sum(missing.values())
+    probable_name_occurrences = sum(probable_names.values())
+    actionable_missing_occurrences = sum(actionable_missing.values())
+    eligible_unique_tokens = len(token_counts) - len(probable_names)
+    eligible_occurrences = total_occurrences - probable_name_occurrences
     target_total = len(target_counts)
     target_missing = len(missing_targets)
     return {
@@ -199,6 +204,14 @@ def build_audit() -> dict:
             "text_token_occurrences": total_occurrences,
             "unique_token_coverage": round((len(token_counts) - len(missing)) / max(1, len(token_counts)), 4),
             "occurrence_coverage": round((total_occurrences - missing_occurrences) / max(1, total_occurrences), 4),
+            "eligible_unique_token_coverage": round(
+                (eligible_unique_tokens - len(actionable_missing)) / max(1, eligible_unique_tokens),
+                4,
+            ),
+            "eligible_occurrence_coverage": round(
+                (eligible_occurrences - actionable_missing_occurrences) / max(1, eligible_occurrences),
+                4,
+            ),
             "unique_target_words": target_total,
             "target_coverage": round((target_total - target_missing) / max(1, target_total), 4),
             "actionable_missing_words": len(actionable_missing),
@@ -222,6 +235,9 @@ def build_audit() -> dict:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="审计内置课程和词典数据")
+    parser.add_argument("--check", action="store_true", help="按发布阈值检查，不达标时退出 1")
+    args = parser.parse_args()
     report = build_audit()
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     json_path = REPORT_DIR / "content-audit.json"
@@ -238,6 +254,8 @@ def main() -> None:
         f"- 当前词典：{summary['dictionary_entries']} 条",
         f"- 正文唯一词覆盖率：{summary['unique_token_coverage']:.2%}",
         f"- 正文出现次数覆盖率：{summary['occurrence_coverage']:.2%}",
+        f"- 排除疑似专有名词后的唯一词覆盖率：{summary['eligible_unique_token_coverage']:.2%}",
+        f"- 排除疑似专有名词后的出现次数覆盖率：{summary['eligible_occurrence_coverage']:.2%}",
         f"- 目标词覆盖率：{summary['target_coverage']:.2%}",
         f"- 待补普通词：{summary['actionable_missing_words']} 个",
         f"- 疑似专有名词：{summary['probable_names']} 个",
@@ -270,6 +288,15 @@ def main() -> None:
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     print(f"[audit] {json_path.relative_to(BACKEND.parent)}")
     print(f"[audit] {markdown_path.relative_to(BACKEND.parent)}")
+    if args.check:
+        failed = (
+            summary["structural_errors"] > 0
+            or summary["target_coverage"] < 1
+            or summary["eligible_unique_token_coverage"] < 0.98
+            or summary["eligible_occurrence_coverage"] < 0.99
+        )
+        if failed:
+            raise SystemExit("[audit] 发布阈值未通过")
 
 
 if __name__ == "__main__":
