@@ -17,6 +17,7 @@ export interface Article {
   courseId: string;
   index: number;
   title: string;
+  titleZh?: string;
   topic: string;
   targetWordCount: number;
   readingMinutes: number;

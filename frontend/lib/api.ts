@@ -78,6 +78,7 @@ export interface GeneratedCourseResponse {
   articles: Array<{
     index: number;
     title: string;
+    title_zh?: string;
     topic: string;
     topic_en: string;
     paragraphs: Array<{

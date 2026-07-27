@@ -269,6 +269,8 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
 
   const translationMode = settings.translationMode;
   const focusSentence = focusSentenceId ? flatSentences.find((item) => item.id === focusSentenceId) ?? null : null;
+  // 旧课程没有 title_zh；在重新生成/补齐数据前以中文主题作为兼容回退。
+  const translatedTitle = article.titleZh?.trim() || article.topic;
 
   return (
     <main className="min-h-screen bg-[var(--neutral-100)] text-[var(--neutral-900)]">
@@ -407,6 +409,7 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
               <h2 className="text-sm font-semibold text-[var(--neutral-700)]">中文对照</h2>
               <span className="text-xs text-[var(--neutral-400)]">同步当前句</span>
             </div>
+            <h3 className="mb-5 font-serif text-2xl font-bold leading-tight text-[var(--neutral-900)]">{translatedTitle}</h3>
             <div className="space-y-4 text-sm leading-8 text-[var(--neutral-700)] lg:text-base">
               {article.paragraphs.map((paragraph) => (
                 <p key={paragraph.id}>
@@ -428,7 +431,10 @@ export function ReaderView({ article, backHref }: ReaderViewProps) {
       {translationMode === "click" && focusSentence && (
         <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--neutral-200)] bg-white/97 px-5 py-4 shadow-2xl backdrop-blur">
           <div className="mx-auto flex max-w-3xl items-start gap-3">
-            <p className="min-w-0 flex-1 text-sm leading-7 text-[var(--neutral-700)]">{focusSentence.zh}</p>
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 text-xs font-semibold text-[var(--neutral-400)]">{translatedTitle}</div>
+              <p className="text-sm leading-7 text-[var(--neutral-700)]">{focusSentence.zh}</p>
+            </div>
             <button
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--neutral-100)] text-[var(--neutral-400)]"
               onClick={() => setFocusSentenceId(null)}
@@ -511,15 +517,10 @@ function SentenceBlock({
               matchedTarget
                 ? "cursor-pointer border-b-2 border-[var(--accent-400)] bg-[rgba(244,162,97,0.32)] hover:bg-[rgba(244,162,97,0.58)]"
                 : lookedUp
-                  ? "cursor-text border-b border-dashed border-[var(--neutral-400)] hover:bg-white/70"
-                  : "cursor-text hover:bg-white/70",
+                  ? "cursor-pointer border-b border-dashed border-[var(--neutral-400)] hover:bg-white/70"
+                  : "cursor-pointer hover:bg-white/70",
             )}
             onClick={(event) => {
-              if (!matchedTarget) return;
-              event.stopPropagation();
-              onOpenDict(token.value, true);
-            }}
-            onDoubleClick={(event) => {
               event.stopPropagation();
               onOpenDict(token.value, Boolean(matchedTarget));
             }}

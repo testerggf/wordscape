@@ -28,6 +28,7 @@ class GenerationPipeline:
         return GeneratedArticle(
             index=plan.index,
             title=raw_article["title"],
+            title_zh=raw_article.get("title_zh", raw_article.get("topic", plan.topic)),
             topic=raw_article.get("topic", plan.topic),
             topic_en=raw_article.get("topic_en", plan.topic_en),
             paragraphs=raw_article["paragraphs"],

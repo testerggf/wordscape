@@ -87,6 +87,7 @@ export function toReaderArticle(stored: StoredGeneratedCourse, articleIndex: num
     courseId: stored.id,
     index: article.index,
     title: article.title,
+    titleZh: article.title_zh,
     topic: article.topic,
     targetWordCount: article.target_word_count,
     readingMinutes: Math.max(1, Math.ceil(article.word_count / 180)),

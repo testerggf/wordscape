@@ -1355,7 +1355,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "修好比尔的男孩"
       },
       {
         "index": 2,
@@ -2713,7 +2714,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "三十年前的卡片"
       },
       {
         "index": 3,
@@ -3864,7 +3866,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "海岛小队"
       },
       {
         "index": 4,
@@ -5215,7 +5218,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "两家之间的歌"
       },
       {
         "index": 5,
@@ -6531,7 +6535,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "河畔之声"
       },
       {
         "index": 6,
@@ -7778,7 +7783,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "小镇跑者"
       },
       {
         "index": 7,
@@ -9149,7 +9155,8 @@
           "passed": true,
           "issues": [],
           "coverage": 0.98
-        }
+        },
+        "title_zh": "射向心中的箭"
       },
       {
         "index": 8,
@@ -10501,7 +10508,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "冬日蛋糕"
       },
       {
         "index": 9,
@@ -11919,7 +11927,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "失踪硬币案"
       },
       {
         "index": 10,
@@ -13184,7 +13193,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "河边的墙"
       },
       {
         "index": 11,
@@ -14486,7 +14496,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "外婆农场的夏天"
       },
       {
         "index": 12,
@@ -15820,7 +15831,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "午夜归乡列车"
       },
       {
         "index": 13,
@@ -17081,7 +17093,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "厨房女王"
       },
       {
         "index": 14,
@@ -18433,7 +18446,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "坠落的卫星"
       },
       {
         "index": 15,
@@ -19742,7 +19756,8 @@
           "passed": true,
           "issues": [],
           "coverage": 0.99
-        }
+        },
+        "title_zh": "双胞胎的东京周末"
       },
       {
         "index": 16,
@@ -21132,7 +21147,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "爷爷村庄的冬天"
       },
       {
         "index": 17,
@@ -22443,7 +22459,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "鹦鹉与银项链"
       },
       {
         "index": 18,
@@ -23964,7 +23981,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "海边新家"
       }
     ]
   },

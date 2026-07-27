@@ -1308,7 +1308,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "丢失的盒子"
       },
       {
         "index": 2,
@@ -2613,7 +2614,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "献给妈妈的歌"
       },
       {
         "index": 3,
@@ -3938,7 +3940,8 @@
           "passed": true,
           "issues": [],
           "coverage": 0.99
-        }
+        },
+        "title_zh": "秋日生日惊喜"
       },
       {
         "index": 4,
@@ -5270,7 +5273,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "爷爷农场的春天"
       },
       {
         "index": 5,
@@ -5771,7 +5775,8 @@
           "passed": true,
           "issues": [],
           "coverage": 1.0
-        }
+        },
+        "title_zh": "爷爷的约定"
       }
     ]
   },

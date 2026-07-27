@@ -15,6 +15,7 @@ interface RawBuiltinCourse {
   articles?: Array<{
     index: number;
     title: string;
+    title_zh?: string;
     topic: string;
     topic_en: string;
     paragraphs: Array<{
@@ -55,6 +56,7 @@ function convert(meta: BuiltinCourseMeta): Course | null {
     courseId: meta.id,
     index: article.index,
     title: article.title,
+    titleZh: article.title_zh,
     topic: article.topic,
     targetWordCount: article.target_word_count,
     readingMinutes: Math.max(1, Math.ceil(article.word_count / 180)),

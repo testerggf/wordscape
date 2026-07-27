@@ -40,6 +40,7 @@ class GeneratedParagraph(BaseModel):
 class GeneratedArticle(BaseModel):
     index: int
     title: str
+    title_zh: str = ""
     topic: str
     topic_en: str
     paragraphs: list[GeneratedParagraph]

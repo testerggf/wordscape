@@ -11,9 +11,11 @@ Strict rules:
 6. For 80+ target words, use 8-12 paragraphs with 4-8 sentences each. For small word lists, scale down proportionally.
 7. Target words may appear in natural inflected forms (abandon -> abandoned); record the form in form_used.
 8. Every sentence needs a natural, fluent Chinese translation — translate meaning, not word-for-word.
-9. Structure output exactly as:
+9. Translate the story title naturally into Chinese and return it in title_zh.
+10. Structure output exactly as:
 {
   "title": "Story title",
+  "title_zh": "自然的中文标题",
   "topic": "主题中文名",
   "topic_en": "English topic",
   "paragraphs": [

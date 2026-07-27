@@ -66,6 +66,7 @@ class AIClient:
 
         return json.dumps({
             "title": title,
+            "title_zh": f"一个关于{topic_cn.strip()}的故事",
             "topic": topic_cn.strip(),
             "topic_en": topic_en.strip(),
             "paragraphs": paragraphs,
