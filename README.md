@@ -29,4 +29,5 @@ uvicorn app.main:app --reload
 ## 当前开发计划
 
 - MVP 阶段（已完成）：见 `docs/development-plan.md`。
-- 当前执行中：体验优化计划，见 `docs/optimization-plan.md`。
+- 体验优化批次 A–F（已完成）：见 `docs/optimization-plan.md`。
+- 当前执行中：数据可信、自动化验证与内测准备，见 `docs/next-stage-execution-plan.md`。

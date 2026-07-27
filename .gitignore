@@ -19,3 +19,7 @@ venv/
 *.log
 coverage/
 .playwright-cli/
+
+# Generated dictionary checkpoints and temporary work lists
+backend/data/builtin_vocabs/out/*.tmp
+backend/data/builtin_vocabs/out/todo_*.txt
