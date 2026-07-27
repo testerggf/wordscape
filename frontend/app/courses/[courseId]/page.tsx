@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { CourseArticleFilters } from "@/components/course/CourseArticleFilters";
-import { getBuiltinCourse } from "@/lib/builtin-course";
+import { getConfiguredBuiltinCourse } from "@/lib/builtin-data";
 
 interface CoursePageProps {
   params: Promise<{ courseId: string }>;
@@ -10,7 +10,7 @@ interface CoursePageProps {
 
 export default async function CoursePage({ params }: CoursePageProps) {
   const { courseId } = await params;
-  const course = getBuiltinCourse(courseId);
+  const course = await getConfiguredBuiltinCourse(courseId);
 
   if (!course) {
     notFound();

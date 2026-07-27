@@ -1,0 +1,984 @@
+{
+  "summary": {
+    "courses": 7,
+    "articles": 172,
+    "dictionary_entries": 7993,
+    "unique_text_tokens": 9527,
+    "text_token_occurrences": 167903,
+    "unique_token_coverage": 0.9842,
+    "occurrence_coverage": 0.9697,
+    "eligible_unique_token_coverage": 1.0,
+    "eligible_occurrence_coverage": 1.0,
+    "unique_target_words": 7197,
+    "target_coverage": 1.0,
+    "actionable_missing_words": 0,
+    "probable_names": 151,
+    "structural_errors": 0,
+    "similar_title_pairs": 62
+  },
+  "courses": [
+    {
+      "id": "primary",
+      "articles": 5,
+      "sentences": 418,
+      "declared_words": 435
+    },
+    {
+      "id": "junior",
+      "articles": 18,
+      "sentences": 1700,
+      "declared_words": 1818
+    },
+    {
+      "id": "senior",
+      "articles": 34,
+      "sentences": 3290,
+      "declared_words": 3427
+    },
+    {
+      "id": "cet4",
+      "articles": 45,
+      "sentences": 3650,
+      "declared_words": 4528
+    },
+    {
+      "id": "cet6",
+      "articles": 22,
+      "sentences": 1922,
+      "declared_words": 2219
+    },
+    {
+      "id": "daily",
+      "articles": 20,
+      "sentences": 1633,
+      "declared_words": 2000
+    },
+    {
+      "id": "business",
+      "articles": 28,
+      "sentences": 2331,
+      "declared_words": 2819
+    }
+  ],
+  "errors": [],
+  "missing_target_words": [],
+  "actionable_missing_words": [],
+  "probable_names": [
+    {
+      "word": "mei",
+      "count": 1780
+    },
+    {
+      "word": "lin",
+      "count": 510
+    },
+    {
+      "word": "i",
+      "count": 263
+    },
+    {
+      "word": "ming",
+      "count": 190
+    },
+    {
+      "word": "jun",
+      "count": 164
+    },
+    {
+      "word": "mei's",
+      "count": 155
+    },
+    {
+      "word": "chen",
+      "count": 143
+    },
+    {
+      "word": "lina",
+      "count": 131
+    },
+    {
+      "word": "lily",
+      "count": 115
+    },
+    {
+      "word": "mina",
+      "count": 110
+    },
+    {
+      "word": "mia",
+      "count": 108
+    },
+    {
+      "word": "leo",
+      "count": 95
+    },
+    {
+      "word": "tao",
+      "count": 91
+    },
+    {
+      "word": "maya",
+      "count": 86
+    },
+    {
+      "word": "han",
+      "count": 63
+    },
+    {
+      "word": "mira",
+      "count": 41
+    },
+    {
+      "word": "anna",
+      "count": 39
+    },
+    {
+      "word": "hua",
+      "count": 38
+    },
+    {
+      "word": "ben",
+      "count": 35
+    },
+    {
+      "word": "wei",
+      "count": 35
+    },
+    {
+      "word": "wu",
+      "count": 32
+    },
+    {
+      "word": "tom",
+      "count": 31
+    },
+    {
+      "word": "zhao",
+      "count": 31
+    },
+    {
+      "word": "daniel",
+      "count": 30
+    },
+    {
+      "word": "li",
+      "count": 28
+    },
+    {
+      "word": "rao",
+      "count": 28
+    },
+    {
+      "word": "bo",
+      "count": 27
+    },
+    {
+      "word": "lan",
+      "count": 27
+    },
+    {
+      "word": "tomas",
+      "count": 23
+    },
+    {
+      "word": "david",
+      "count": 22
+    },
+    {
+      "word": "gao",
+      "count": 22
+    },
+    {
+      "word": "lena",
+      "count": 20
+    },
+    {
+      "word": "lin's",
+      "count": 20
+    },
+    {
+      "word": "jack",
+      "count": 18
+    },
+    {
+      "word": "arun",
+      "count": 17
+    },
+    {
+      "word": "rosa",
+      "count": 17
+    },
+    {
+      "word": "max",
+      "count": 15
+    },
+    {
+      "word": "hai",
+      "count": 14
+    },
+    {
+      "word": "kai",
+      "count": 13
+    },
+    {
+      "word": "mina's",
+      "count": 13
+    },
+    {
+      "word": "ming's",
+      "count": 13
+    },
+    {
+      "word": "chen's",
+      "count": 12
+    },
+    {
+      "word": "ravi",
+      "count": 12
+    },
+    {
+      "word": "daisy",
+      "count": 11
+    },
+    {
+      "word": "mia's",
+      "count": 11
+    },
+    {
+      "word": "willow",
+      "count": 11
+    },
+    {
+      "word": "dubois",
+      "count": 10
+    },
+    {
+      "word": "marco",
+      "count": 10
+    },
+    {
+      "word": "bao",
+      "count": 9
+    },
+    {
+      "word": "leo's",
+      "count": 9
+    },
+    {
+      "word": "lina's",
+      "count": 9
+    },
+    {
+      "word": "rong",
+      "count": 9
+    },
+    {
+      "word": "boris",
+      "count": 8
+    },
+    {
+      "word": "ho",
+      "count": 8
+    },
+    {
+      "word": "lily's",
+      "count": 8
+    },
+    {
+      "word": "sam",
+      "count": 8
+    },
+    {
+      "word": "tao's",
+      "count": 8
+    },
+    {
+      "word": "cole",
+      "count": 7
+    },
+    {
+      "word": "lili",
+      "count": 7
+    },
+    {
+      "word": "mira's",
+      "count": 7
+    },
+    {
+      "word": "victor",
+      "count": 7
+    },
+    {
+      "word": "wang",
+      "count": 7
+    },
+    {
+      "word": "bing",
+      "count": 6
+    },
+    {
+      "word": "blake",
+      "count": 6
+    },
+    {
+      "word": "dan",
+      "count": 6
+    },
+    {
+      "word": "fang",
+      "count": 6
+    },
+    {
+      "word": "hale",
+      "count": 6
+    },
+    {
+      "word": "kenji",
+      "count": 6
+    },
+    {
+      "word": "mary",
+      "count": 6
+    },
+    {
+      "word": "qiqi",
+      "count": 6
+    },
+    {
+      "word": "rafi",
+      "count": 6
+    },
+    {
+      "word": "xiao",
+      "count": 6
+    },
+    {
+      "word": "amir",
+      "count": 5
+    },
+    {
+      "word": "anna's",
+      "count": 5
+    },
+    {
+      "word": "drake",
+      "count": 5
+    },
+    {
+      "word": "hana",
+      "count": 5
+    },
+    {
+      "word": "liu",
+      "count": 5
+    },
+    {
+      "word": "ravi's",
+      "count": 5
+    },
+    {
+      "word": "ross",
+      "count": 5
+    },
+    {
+      "word": "tv",
+      "count": 5
+    },
+    {
+      "word": "yan",
+      "count": 5
+    },
+    {
+      "word": "bo's",
+      "count": 4
+    },
+    {
+      "word": "dou",
+      "count": 4
+    },
+    {
+      "word": "doudou",
+      "count": 4
+    },
+    {
+      "word": "emma",
+      "count": 4
+    },
+    {
+      "word": "greenford",
+      "count": 4
+    },
+    {
+      "word": "han's",
+      "count": 4
+    },
+    {
+      "word": "hans",
+      "count": 4
+    },
+    {
+      "word": "jun's",
+      "count": 4
+    },
+    {
+      "word": "lian",
+      "count": 4
+    },
+    {
+      "word": "luo",
+      "count": 4
+    },
+    {
+      "word": "rick",
+      "count": 4
+    },
+    {
+      "word": "rong's",
+      "count": 4
+    },
+    {
+      "word": "sara",
+      "count": 4
+    },
+    {
+      "word": "starlight",
+      "count": 4
+    },
+    {
+      "word": "ali",
+      "count": 3
+    },
+    {
+      "word": "david's",
+      "count": 3
+    },
+    {
+      "word": "diaz",
+      "count": 3
+    },
+    {
+      "word": "feng",
+      "count": 3
+    },
+    {
+      "word": "gao's",
+      "count": 3
+    },
+    {
+      "word": "grayford",
+      "count": 3
+    },
+    {
+      "word": "qian",
+      "count": 3
+    },
+    {
+      "word": "vale",
+      "count": 3
+    },
+    {
+      "word": "yu",
+      "count": 3
+    },
+    {
+      "word": "amir's",
+      "count": 2
+    },
+    {
+      "word": "arthur",
+      "count": 2
+    },
+    {
+      "word": "asha",
+      "count": 2
+    },
+    {
+      "word": "auntie",
+      "count": 2
+    },
+    {
+      "word": "b",
+      "count": 2
+    },
+    {
+      "word": "deng",
+      "count": 2
+    },
+    {
+      "word": "fang's",
+      "count": 2
+    },
+    {
+      "word": "hai's",
+      "count": 2
+    },
+    {
+      "word": "harris",
+      "count": 2
+    },
+    {
+      "word": "ken",
+      "count": 2
+    },
+    {
+      "word": "lee",
+      "count": 2
+    },
+    {
+      "word": "nini",
+      "count": 2
+    },
+    {
+      "word": "seabrook",
+      "count": 2
+    },
+    {
+      "word": "singapore",
+      "count": 2
+    },
+    {
+      "word": "amy",
+      "count": 1
+    },
+    {
+      "word": "arun's",
+      "count": 1
+    },
+    {
+      "word": "berlin",
+      "count": 1
+    },
+    {
+      "word": "chengdu",
+      "count": 1
+    },
+    {
+      "word": "cole's",
+      "count": 1
+    },
+    {
+      "word": "dan's",
+      "count": 1
+    },
+    {
+      "word": "drake's",
+      "count": 1
+    },
+    {
+      "word": "guangzhou",
+      "count": 1
+    },
+    {
+      "word": "hana's",
+      "count": 1
+    },
+    {
+      "word": "ho's",
+      "count": 1
+    },
+    {
+      "word": "hos",
+      "count": 1
+    },
+    {
+      "word": "hu",
+      "count": 1
+    },
+    {
+      "word": "jack's",
+      "count": 1
+    },
+    {
+      "word": "joe",
+      "count": 1
+    },
+    {
+      "word": "kai's",
+      "count": 1
+    },
+    {
+      "word": "lan's",
+      "count": 1
+    },
+    {
+      "word": "lena's",
+      "count": 1
+    },
+    {
+      "word": "linhai",
+      "count": 1
+    },
+    {
+      "word": "mars",
+      "count": 1
+    },
+    {
+      "word": "max's",
+      "count": 1
+    },
+    {
+      "word": "momo",
+      "count": 1
+    },
+    {
+      "word": "pavel",
+      "count": 1
+    },
+    {
+      "word": "qian's",
+      "count": 1
+    },
+    {
+      "word": "rick's",
+      "count": 1
+    },
+    {
+      "word": "rosa's",
+      "count": 1
+    },
+    {
+      "word": "shanghai",
+      "count": 1
+    },
+    {
+      "word": "vale's",
+      "count": 1
+    },
+    {
+      "word": "venus",
+      "count": 1
+    },
+    {
+      "word": "victor's",
+      "count": 1
+    },
+    {
+      "word": "wei's",
+      "count": 1
+    },
+    {
+      "word": "wu's",
+      "count": 1
+    },
+    {
+      "word": "yan's",
+      "count": 1
+    },
+    {
+      "word": "zhou",
+      "count": 1
+    }
+  ],
+  "similar_titles": [
+    {
+      "left": "cet6#6 The Mill Beside the River",
+      "right": "cet6#19 The Mill Beside the River",
+      "similarity": 1.0
+    },
+    {
+      "left": "junior#10 The Wall by the River",
+      "right": "senior#15 The Mill by the River",
+      "similarity": 0.905
+    },
+    {
+      "left": "daily#11 Mei and the Old Mill",
+      "right": "daily#13 Mei and the Old Bell",
+      "similarity": 0.9
+    },
+    {
+      "left": "cet6#10 Mei and the Old Market",
+      "right": "business#14 Mei and the Old Market Plan",
+      "similarity": 0.898
+    },
+    {
+      "left": "cet6#10 Mei and the Old Market",
+      "right": "business#27 Mei and the Old Market Hall",
+      "similarity": 0.898
+    },
+    {
+      "left": "daily#11 Mei and the Old Mill",
+      "right": "business#25 Mei and the Old Wool Mill",
+      "similarity": 0.889
+    },
+    {
+      "left": "business#14 Mei and the Old Market Plan",
+      "right": "business#27 Mei and the Old Market Hall",
+      "similarity": 0.889
+    },
+    {
+      "left": "cet6#14 Mei and the Harbor Garden",
+      "right": "business#12 Mei and the Harbor Market",
+      "similarity": 0.88
+    },
+    {
+      "left": "business#12 Mei and the Harbor Market",
+      "right": "business#20 Mei and the Harbour Map",
+      "similarity": 0.875
+    },
+    {
+      "left": "business#16 Mei and the Old Workshop",
+      "right": "business#28 Mei and the Old Market Workshop",
+      "similarity": 0.873
+    },
+    {
+      "left": "senior#15 The Mill by the River",
+      "right": "cet6#6 The Mill Beside the River",
+      "similarity": 0.87
+    },
+    {
+      "left": "senior#15 The Mill by the River",
+      "right": "cet6#19 The Mill Beside the River",
+      "similarity": 0.87
+    },
+    {
+      "left": "cet4#12 The Bridge Festival",
+      "right": "cet4#17 The Cloth Bridge Festival",
+      "similarity": 0.864
+    },
+    {
+      "left": "business#10 Mei and the Harbor Project",
+      "right": "business#12 Mei and the Harbor Market",
+      "similarity": 0.863
+    },
+    {
+      "left": "cet6#3 The Bell of Willow Town",
+      "right": "business#3 The Voice of Willow Town",
+      "similarity": 0.851
+    },
+    {
+      "left": "cet6#10 Mei and the Old Market",
+      "right": "business#12 Mei and the Harbor Market",
+      "similarity": 0.851
+    },
+    {
+      "left": "daily#5 Mei and the River Radio",
+      "right": "business#6 Mei and the Market Radio",
+      "similarity": 0.851
+    },
+    {
+      "left": "senior#6 The Voice by the River",
+      "right": "daily#20 The Center by the River",
+      "similarity": 0.844
+    },
+    {
+      "left": "daily#5 Mei and the River Radio",
+      "right": "business#11 Mei and the River Mill",
+      "similarity": 0.844
+    },
+    {
+      "left": "business#17 The Market Hall Promise",
+      "right": "business#21 The Market Hall Rescue",
+      "similarity": 0.844
+    },
+    {
+      "left": "cet4#11 The Fair After the Storm",
+      "right": "cet4#26 The Bridge After the Storm",
+      "similarity": 0.84
+    },
+    {
+      "left": "senior#6 The Voice by the River",
+      "right": "senior#15 The Mill by the River",
+      "similarity": 0.837
+    },
+    {
+      "left": "cet4#6 Mia and the Bridge Fair",
+      "right": "daily#12 Mei and the Bridge Garden",
+      "similarity": 0.833
+    },
+    {
+      "left": "cet6#14 Mei and the Harbor Garden",
+      "right": "business#20 Mei and the Harbour Map",
+      "similarity": 0.833
+    },
+    {
+      "left": "cet6#10 Mei and the Old Market",
+      "right": "business#28 Mei and the Old Market Workshop",
+      "similarity": 0.83
+    },
+    {
+      "left": "business#14 Mei and the Old Market Plan",
+      "right": "business#28 Mei and the Old Market Workshop",
+      "similarity": 0.828
+    },
+    {
+      "left": "business#27 Mei and the Old Market Hall",
+      "right": "business#28 Mei and the Old Market Workshop",
+      "similarity": 0.828
+    },
+    {
+      "left": "cet4#6 Mia and the Bridge Fair",
+      "right": "cet6#4 Mei and the Spring Fair",
+      "similarity": 0.826
+    },
+    {
+      "left": "cet4#23 Mei and the Hall by the Sea",
+      "right": "daily#15 The Hall by the Sea",
+      "similarity": 0.826
+    },
+    {
+      "left": "cet6#2 The Fair at River Street",
+      "right": "business#5 The Fair at River Town",
+      "similarity": 0.826
+    },
+    {
+      "left": "cet6#20 Mei and the River Museum",
+      "right": "business#11 Mei and the River Mill",
+      "similarity": 0.826
+    },
+    {
+      "left": "cet4#32 The Night the River Changed",
+      "right": "daily#19 The Night the River Rose",
+      "similarity": 0.824
+    },
+    {
+      "left": "cet6#14 Mei and the Harbor Garden",
+      "right": "business#10 Mei and the Harbor Project",
+      "similarity": 0.824
+    },
+    {
+      "left": "cet4#44 Mei and the Storm Bridge",
+      "right": "daily#16 Mei and the Broken Bridge",
+      "similarity": 0.816
+    },
+    {
+      "left": "business#10 Mei and the Harbor Project",
+      "right": "business#20 Mei and the Harbour Map",
+      "similarity": 0.816
+    },
+    {
+      "left": "cet4#9 The Letter for Green Island",
+      "right": "business#2 The Bridge for Green Island",
+      "similarity": 0.815
+    },
+    {
+      "left": "cet6#11 The Lantern Hall",
+      "right": "cet6#15 The Lantern Cave",
+      "similarity": 0.812
+    },
+    {
+      "left": "cet6#10 Mei and the Old Market",
+      "right": "daily#11 Mei and the Old Mill",
+      "similarity": 0.81
+    },
+    {
+      "left": "cet6#10 Mei and the Old Market",
+      "right": "daily#13 Mei and the Old Bell",
+      "similarity": 0.81
+    },
+    {
+      "left": "daily#11 Mei and the Old Mill",
+      "right": "business#11 Mei and the River Mill",
+      "similarity": 0.81
+    },
+    {
+      "left": "daily#11 Mei and the Old Mill",
+      "right": "business#27 Mei and the Old Market Hall",
+      "similarity": 0.809
+    },
+    {
+      "left": "daily#13 Mei and the Old Bell",
+      "right": "business#27 Mei and the Old Market Hall",
+      "similarity": 0.809
+    },
+    {
+      "left": "cet4#9 The Letter for Green Island",
+      "right": "cet6#5 The Ferry to Green Island",
+      "similarity": 0.808
+    },
+    {
+      "left": "cet6#17 The Moon Fair of Willow Town",
+      "right": "business#3 The Voice of Willow Town",
+      "similarity": 0.808
+    },
+    {
+      "left": "business#9 Mei and the Harbor Festival",
+      "right": "business#12 Mei and the Harbor Market",
+      "similarity": 0.808
+    },
+    {
+      "left": "junior#10 The Wall by the River",
+      "right": "daily#15 The Hall by the Sea",
+      "similarity": 0.8
+    },
+    {
+      "left": "cet4#4 The Green Island Project",
+      "right": "daily#3 The Green Island Plan",
+      "similarity": 0.8
+    },
+    {
+      "left": "cet4#8 Ming and the River Market",
+      "right": "business#12 Mei and the Harbor Market",
+      "similarity": 0.8
+    },
+    {
+      "left": "cet6#14 Mei and the Harbor Garden",
+      "right": "daily#12 Mei and the Bridge Garden",
+      "similarity": 0.8
+    },
+    {
+      "left": "daily#13 Mei and the Old Bell",
+      "right": "business#25 Mei and the Old Wool Mill",
+      "similarity": 0.8
+    },
+    {
+      "left": "business#9 Mei and the Harbor Festival",
+      "right": "business#20 Mei and the Harbour Map",
+      "similarity": 0.8
+    },
+    {
+      "left": "daily#16 Mei and the Broken Bridge",
+      "right": "business#19 Mei and the Broken Warehouse",
+      "similarity": 0.792
+    },
+    {
+      "left": "business#9 Mei and the Harbor Festival",
+      "right": "business#10 Mei and the Harbor Project",
+      "similarity": 0.792
+    },
+    {
+      "left": "junior#10 The Wall by the River",
+      "right": "senior#6 The Voice by the River",
+      "similarity": 0.791
+    },
+    {
+      "left": "senior#10 The Bell by the Bay",
+      "right": "daily#15 The Hall by the Sea",
+      "similarity": 0.789
+    },
+    {
+      "left": "business#6 Mei and the Market Radio",
+      "right": "business#14 Mei and the Old Market Plan",
+      "similarity": 0.784
+    },
+    {
+      "left": "business#6 Mei and the Market Radio",
+      "right": "business#27 Mei and the Old Market Hall",
+      "similarity": 0.784
+    },
+    {
+      "left": "junior#10 The Wall by the River",
+      "right": "cet6#6 The Mill Beside the River",
+      "similarity": 0.783
+    },
+    {
+      "left": "junior#10 The Wall by the River",
+      "right": "cet6#19 The Mill Beside the River",
+      "similarity": 0.783
+    },
+    {
+      "left": "cet6#10 Mei and the Old Market",
+      "right": "business#6 Mei and the Market Radio",
+      "similarity": 0.783
+    },
+    {
+      "left": "cet6#10 Mei and the Old Market",
+      "right": "business#16 Mei and the Old Workshop",
+      "similarity": 0.783
+    },
+    {
+      "left": "senior#17 The Inn by the Lake",
+      "right": "cet6#16 The Train by the Inlet",
+      "similarity": 0.78
+    }
+  ]
+}

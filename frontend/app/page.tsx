@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, FilePlus2, Settings, Sparkles } from "lucide-react";
 import { QuickLinks } from "@/components/home/QuickLinks";
-import { getBuiltinCourses } from "@/lib/builtin-course";
+import { getConfiguredBuiltinCourses } from "@/lib/builtin-data";
 
-export default function Home() {
-  const courses = getBuiltinCourses();
+export default async function Home() {
+  const courses = await getConfiguredBuiltinCourses();
   const firstCourse = courses[0];
 
   return (

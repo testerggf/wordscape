@@ -1,0 +1,147 @@
+{
+  "local": {
+    "courses": 7,
+    "articles": 172,
+    "dict_entries": 7993,
+    "local_files_preserved": true
+  },
+  "migrated_courses": [
+    {
+      "builtin_id": "primary",
+      "vocab_set_id": "2033769f-4220-42b5-9bf5-b8c89bc9916a",
+      "course_id": "bd84ecb2-df98-4a31-afb2-3e1ef3070205",
+      "vocab_words": 435,
+      "articles": 5,
+      "target_words": 434
+    },
+    {
+      "builtin_id": "junior",
+      "vocab_set_id": "9e82fa81-466c-42c8-87f4-ca4ba265d28c",
+      "course_id": "9f9c90dd-c3bb-498e-bc5a-91a9bae192d8",
+      "vocab_words": 1818,
+      "articles": 18,
+      "target_words": 1815
+    },
+    {
+      "builtin_id": "senior",
+      "vocab_set_id": "271d180c-7462-4f67-b18f-a69336ac2397",
+      "course_id": "046dbf04-ea44-4076-963b-d59ca7570c74",
+      "vocab_words": 3427,
+      "articles": 34,
+      "target_words": 3424
+    },
+    {
+      "builtin_id": "cet4",
+      "vocab_set_id": "6b1143e5-7cb5-45bc-8c8d-bc89447e7527",
+      "course_id": "3277ba82-1242-4a94-a325-98a06fe6e036",
+      "vocab_words": 4528,
+      "articles": 45,
+      "target_words": 4525
+    },
+    {
+      "builtin_id": "cet6",
+      "vocab_set_id": "af08e3bc-2d5f-45cb-b079-54df2526ad6d",
+      "course_id": "184a0a58-d99b-4c68-82c6-f1df33d375d4",
+      "vocab_words": 2219,
+      "articles": 22,
+      "target_words": 2213
+    },
+    {
+      "builtin_id": "daily",
+      "vocab_set_id": "eb829d97-f002-45a5-8586-51cb0e864440",
+      "course_id": "e92b2401-ae01-41e0-a13a-c2f823168015",
+      "vocab_words": 2000,
+      "articles": 20,
+      "target_words": 1995
+    },
+    {
+      "builtin_id": "business",
+      "vocab_set_id": "97a8964b-597d-4c85-b816-da01e7e21bdc",
+      "course_id": "a04e37c1-d6fd-4c33-9d0e-9c5d124842d5",
+      "vocab_words": 2819,
+      "articles": 28,
+      "target_words": 2815
+    }
+  ],
+  "migrated_dictionary": 7993,
+  "verification": {
+    "vocab_sets": 7,
+    "courses": 7,
+    "articles": 172,
+    "free_articles": 35,
+    "article_target_words": 17221,
+    "dict_entries": 7993,
+    "by_course": [
+      {
+        "builtin_id": "primary",
+        "vocab_sets": 1,
+        "courses": 1,
+        "vocab_words": 435,
+        "articles": 5,
+        "free_articles": 5,
+        "target_words": 434,
+        "status": "ready"
+      },
+      {
+        "builtin_id": "junior",
+        "vocab_sets": 1,
+        "courses": 1,
+        "vocab_words": 1818,
+        "articles": 18,
+        "free_articles": 5,
+        "target_words": 1815,
+        "status": "ready"
+      },
+      {
+        "builtin_id": "senior",
+        "vocab_sets": 1,
+        "courses": 1,
+        "vocab_words": 3427,
+        "articles": 34,
+        "free_articles": 5,
+        "target_words": 3424,
+        "status": "ready"
+      },
+      {
+        "builtin_id": "cet4",
+        "vocab_sets": 1,
+        "courses": 1,
+        "vocab_words": 4528,
+        "articles": 45,
+        "free_articles": 5,
+        "target_words": 4525,
+        "status": "ready"
+      },
+      {
+        "builtin_id": "cet6",
+        "vocab_sets": 1,
+        "courses": 1,
+        "vocab_words": 2219,
+        "articles": 22,
+        "free_articles": 5,
+        "target_words": 2213,
+        "status": "ready"
+      },
+      {
+        "builtin_id": "daily",
+        "vocab_sets": 1,
+        "courses": 1,
+        "vocab_words": 2000,
+        "articles": 20,
+        "free_articles": 5,
+        "target_words": 1995,
+        "status": "ready"
+      },
+      {
+        "builtin_id": "business",
+        "vocab_sets": 1,
+        "courses": 1,
+        "vocab_words": 2819,
+        "articles": 28,
+        "free_articles": 5,
+        "target_words": 2815,
+        "status": "ready"
+      }
+    ]
+  }
+}

@@ -43,6 +43,7 @@ cp .env.local.example .env.local
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_BUILTIN_DATA_SOURCE=supabase
 NEXT_PUBLIC_SUPABASE_URL=https://你的项目.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=你的 anon key
 ```
@@ -68,9 +69,14 @@ ENCRYPT_SECRET=替换成至少32位的随机字符串
 
 Phase 6 先完成数据库结构和封装层，不强制把现有页面全部切到 Supabase。
 
-当前前端仍优先使用本地种子数据和 `localStorage`，但新增了 Supabase 客户端与查询封装，后续可以逐页替换：
+内置课程数据源可通过 `NEXT_PUBLIC_BUILTIN_DATA_SOURCE` 配置：
 
-1. 内置课程读取：`seed-data` → `lib/supabase/queries.ts`
+1. `local`：始终读取 `frontend/data/courses/*.json`。
+2. `supabase`：优先读取 Supabase；连接失败、超时、空数据或结构异常时自动回退本地 JSON。
+
+用户学习状态当前仍使用 `localStorage`，后续可逐页替换：
+
+1. 阅读进度：`localStorage` → `reading_progress`
 2. 生成课程保存：`localStorage` → 后端 service role 写库
 3. 阅读进度：`localStorage` → `reading_progress`
 4. 生词本：`localStorage` → `wordbook`

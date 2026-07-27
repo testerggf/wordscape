@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { ReaderView } from "@/components/reader/ReaderView";
-import { getBuiltinArticle } from "@/lib/builtin-course";
+import { getConfiguredBuiltinArticle } from "@/lib/builtin-data";
 
 interface ReadPageProps {
   params: Promise<{ articleId: string }>;
@@ -8,7 +8,7 @@ interface ReadPageProps {
 
 export default async function ReadPage({ params }: ReadPageProps) {
   const { articleId } = await params;
-  const article = getBuiltinArticle(articleId);
+  const article = await getConfiguredBuiltinArticle(articleId);
 
   if (!article || article.status === "locked") {
     notFound();

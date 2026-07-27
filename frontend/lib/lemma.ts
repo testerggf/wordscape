@@ -100,7 +100,7 @@ export function lemmaCandidates(raw: string): string[] {
   const word = raw.toLowerCase().replace(/^'+|'+$/g, "");
   const out: string[] = [];
   const push = (candidate: string) => {
-    if (candidate.length >= 2 && !out.includes(candidate)) out.push(candidate);
+    if (candidate.length >= 1 && !out.includes(candidate)) out.push(candidate);
   };
 
   push(word);

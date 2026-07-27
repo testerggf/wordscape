@@ -50,7 +50,7 @@ def lemma_candidates(raw: str) -> list[str]:
     out: list[str] = []
 
     def push(candidate: str) -> None:
-        if len(candidate) >= 2 and candidate not in out:
+        if len(candidate) >= 1 and candidate not in out:
             out.append(candidate)
 
     push(word)
